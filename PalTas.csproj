@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0-windows</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <PublishAot>true</PublishAot>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <NoWarn>CS8500</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Vanara.PInvoke.Kernel32" Version="5.0.1" />
+        <PackageReference Include="Vanara.PInvoke.User32" Version="5.0.1" />
+    </ItemGroup>
+
+</Project>
