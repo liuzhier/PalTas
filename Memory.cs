@@ -1,9 +1,6 @@
-using System.Diagnostics;
-using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 using System.Text;
 using Vanara.PInvoke;
-using static Vanara.PInvoke.Kernel32.PSS_HANDLE_ENTRY;
 
 namespace PalTas;
 
@@ -26,7 +23,9 @@ public static unsafe class TasMemory
         //MEMBER_TRAIL_RELATIVE_TO_VIEWPORT       = 0x0000_0274,                  // 连续结构：队伍相对于视口的步伐
         MEMBER_TRAIL                            = 0x0000_04D0,                  // 连续结构：队伍步伐
         INVENTORY                               = 0x0000_0768,                  // 连续结构：道具列表
-        CURRENT_SCENE_EVENT                     = 0x0000_07E8;                  // 连续结构：当前场景事件
+        CURRENT_SCENE_EVENT                     = 0x0000_07E8,                  // 连续结构：当前场景事件
+        CURRENT_ENEMY_TEAM_ID                   = PAL_EXE + 0x0017_7BC8,        // 当前敌方队伍编号
+        RANDOM_SEED                             = 0x0007_1FCC;                  // PAL.DLL 的随机数种子
 
     /// <summary>
     /// 进程句柄
@@ -58,6 +57,9 @@ public static unsafe class TasMemory
     public static uint MemberTrailRelativeToViewportAddr => PalBaseAddr + MEMBER_TRAIL_RELATIVE_TO_VIEWPORT;
     public static uint InventoryAddr => PalBaseAddr + INVENTORY;
     public static uint MemberTrailAddr => PalBaseAddr + MEMBER_TRAIL;
+    public static uint CurrentEnemyTeamIdAddr => CURRENT_ENEMY_TEAM_ID;
+    public static uint PalDllAddr => (uint)GetPalModuleBase();
+    public static uint RandomSeedAddr => PalDllAddr + RANDOM_SEED;
 
     /// <summary>
     /// 初始化内存模块

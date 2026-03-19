@@ -25,13 +25,4 @@ public static class S
     {
         Thread.Sleep(millisecondsTimeout);
     }
-
-    /// <summary>
-    /// 异步延迟一段时间，不阻塞其他任务
-    /// </summary>
-    /// <param name="millisecondsTimeout">欲延迟的毫秒数</param>
-    public static Task SleepAsync(int millisecondsTimeout = 1)
-    {
-        return Task.Delay(millisecondsTimeout);
-    }
 }

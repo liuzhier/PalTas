@@ -1,5 +1,9 @@
 using PalTas.Records;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using Vanara.PInvoke;
 using static PalTas.Records.Core;
+using static Vanara.PInvoke.ComDlg32;
 
 namespace PalTas;
 
@@ -226,12 +230,12 @@ public static unsafe class TasData
     }
 
     /// <summary>
-    /// 设置事件触发方式
+    /// 设置事件信息
     /// </summary>
     /// <param name="sceneId">场景编号，-1 则为当前场景</param>
     /// <param name="eventId">事件编号</param>
-    /// <param name="triggerMode">触发方式</param>
-    public static void SetEventTriggerMode(int sceneId, TasScript.SceneEvent eventId, EventTriggerMode triggerMode)
+    /// <param name="event">事件信息</param>
+    public static void SetEventInfo(int sceneId, TasScript.SceneEvent eventId, REvent @event)
     {
         var isCurrentScene = ((sceneId == -1) || (sceneId == GetCurrentSceneId()));
         //var isCurrentScene = ((sceneId == -1));
@@ -243,45 +247,28 @@ public static unsafe class TasData
         }
         var baseOffset = eventAddr + (uint)((int)eventId * sizeof(REvent));
 
-        TasMemory.WriteUInt16(baseOffset, (ushort)triggerMode, 14);
+        TasMemory.WriteInt16(baseOffset, @event.VanishTime);
+        TasMemory.WriteInt16(baseOffset, @event.X, 2);
+        TasMemory.WriteInt16(baseOffset, @event.Y, 4);
+        TasMemory.WriteInt16(baseOffset, @event.Layer, 6);
+        TasMemory.WriteUInt16(baseOffset, @event.TriggerScript, 8);
+        TasMemory.WriteUInt16(baseOffset, @event.AutoScript, 10);
+        TasMemory.WriteUInt16(baseOffset, (ushort)@event.State, 12);
+        TasMemory.WriteUInt16(baseOffset, (ushort)@event.TriggerMode, 14);
+        TasMemory.WriteUInt16(baseOffset, @event.SpriteId, 16);
+        TasMemory.WriteUInt16(baseOffset, @event.FramesPerDirection, 18);
+        TasMemory.WriteUInt16(baseOffset, (ushort)@event.Direction, 20);
+        TasMemory.WriteUInt16(baseOffset, @event.CurrentFrameId, 22);
+        TasMemory.WriteUInt16(baseOffset, @event.TriggerIdleFrame, 24);
+        TasMemory.WriteUInt16(baseOffset, @event.AutoIdleFrame, 26);
     }
 
     /// <summary>
-    /// 设置当前场景的事件触发方式
+    /// 设置当前场景中指定事件的信息
     /// </summary>
     /// <param name="eventId">事件编号</param>
-    /// <param name="triggerMode">触发方式</param>
-    public static void SetCurrentSceneEventTriggerMode(TasScript.SceneEvent eventId, EventTriggerMode triggerMode) =>
-        SetEventTriggerMode(-1, eventId, triggerMode);
-
-    /// <summary>
-    /// 设置事件触发方式
-    /// </summary>
-    /// <param name="sceneId">场景编号，-1 则为当前场景</param>
-    /// <param name="eventId">事件编号</param>
-    /// <param name="triggerMode">触发方式</param>
-    public static void SetEventTriggerScript(int sceneId, TasScript.SceneEvent eventId, ushort address)
-    {
-        var isCurrentScene = ((sceneId == -1) || (sceneId == GetCurrentSceneId()));
-        //var isCurrentScene = ((sceneId == -1));
-        var eventAddr = TasMemory.ReadUInt32(isCurrentScene ? TasMemory.CurrentSceneEventAddr : TasMemory.EventAddr);
-        if (!isCurrentScene)
-        {
-            eventId += GetScene(sceneId).EventObjectIndex;
-            eventId--;
-        }
-        var baseOffset = eventAddr + (uint)((int)eventId * sizeof(REvent));
-
-        TasMemory.WriteUInt16(baseOffset, address, 8);
-    }
-
-    /// <summary>
-    /// 设置当前场景的事件触发方式
-    /// </summary>
-    /// <param name="eventId">事件编号</param>
-    /// <param name="triggerMode">触发方式</param>
-    public static void SetCurrentSceneEventTriggerScript(TasScript.SceneEvent eventId, ushort address) =>
-        SetEventTriggerScript(-1, eventId, address);
+    /// <param name="event">事件信息</param>
+    public static void SetCurrentSceneEventInfo(TasScript.SceneEvent eventId, REvent @event) => SetEventInfo(-1, eventId, @event);
 
     /// <summary>
     /// 从库存中删除指定道具，每次删一个
@@ -305,4 +292,102 @@ public static unsafe class TasData
             }
         }
     }
+
+    /// <summary>
+    /// 获取当前敌方队列编号
+    /// </summary>
+    public static ushort GetCurrentEnemyTeamId() => TasMemory.ReadUInt16(TasMemory.CurrentEnemyTeamIdAddr);
+
+    /// <summary>
+    /// 获取当前是否在战斗中（游戏中共 0x017C 组敌方队伍）
+    /// </summary>
+    public static bool IsInBattle => GetCurrentEnemyTeamId() <= 0x017C && GetCurrentEnemyTeamId() != 0;
+
+    /// <summary>
+    /// 将指定地址的指令替换为指定指令字节
+    /// </summary>
+    /// <param name="handle">进程句柄</param>
+    /// <param name="address">进程地址</param>
+    /// <param name="commandBytes">机器码字节</param>
+    /// <returns>是否成功</returns>
+    private static bool PatchInstruction(HPROCESS handle, nint address, byte[] commandBytes)
+    {
+        // 修改内存保护为可读写执行
+        if (!Kernel32.VirtualProtectEx(handle, address, (SizeT)commandBytes.Length, Kernel32.MEM_PROTECTION.PAGE_EXECUTE_READWRITE, out var oldProtect))
+        {
+            var error = Kernel32.GetLastError();
+            Console.WriteLine($"VirtualProtectEx 失败，错误码: {error} (0x{error:X})");
+            return false;
+        }
+
+        // 写入 NOP 字节
+        bool success = Kernel32.WriteProcessMemory(handle, address, commandBytes, (uint)commandBytes.Length, out var _);
+
+        // 恢复原保护属性（可选，但推荐）
+        Kernel32.VirtualProtectEx(handle, address, (SizeT)commandBytes.Length, oldProtect, out _);
+
+        return success;
+    }
+
+    public static nint GetPalModuleBase()
+    {
+        // 通过窗口句柄获取进程ID（复用你的逻辑）
+        User32.GetWindowThreadProcessId(GetWindowHandle(), out var processId);
+        if (processId == 0)
+            throw new Exception("无法获取进程ID");
+
+        // 通过进程ID获取 Process 对象
+        using (var process = Process.GetProcessById((int)processId))
+        {
+            foreach (ProcessModule module in process.Modules)
+            {
+                if (module.ModuleName.Equals("Pal.dll", StringComparison.OrdinalIgnoreCase))
+                    return module.BaseAddress;
+            }
+        }
+        throw new Exception("未找到 Pal.dll 模块");
+    }
+
+    /// <summary>
+    /// 设置游戏是正常随机，还是是由 Tas 掌控
+    /// </summary>
+    /// <param name="needRandom">是否启用正常随机</param>
+    public static void DisableRandom(bool disable = true)
+    {
+        var handle = TasMemory.GetProcessHandle();
+        if (handle != 0)
+        {
+            var palDllBase = TasMemory.PalDllAddr;
+            Console.WriteLine($"Pal.dll 基址: 0x{palDllBase:X8}");
+
+            // 计算指令实际地址（使用你测得的偏移量）
+            var instr1Offset = 0x0002_DF99;     // 第一条指令偏移
+            var instr2Offset = 0x0002_E00B;     // 第二条指令偏移
+            var instr1Addr = nint.Add((nint)palDllBase, instr1Offset);
+            var instr2Addr = nint.Add((nint)palDllBase, instr2Offset);
+
+            // 补丁第一条指令（长度 5 字节：A3 xx xx xx xx）
+            bool ok1 = PatchInstruction(handle, instr1Addr, disable ? [0x90, 0x90, 0x90, 0x90, 0x90] : [0xA3, 0xCC, 0x1F, 0x6A, 0x72]);
+            Console.WriteLine(ok1 ? "第一条指令补丁成功" : "第一条指令补丁失败");
+
+            // 补丁第二条指令（长度 6 字节：89 1D xx xx xx xx）
+            bool ok2 = PatchInstruction(handle, instr2Addr, disable ? [0x90, 0x90, 0x90, 0x90, 0x90, 0x90] : [0x89, 0x1D, 0xCC, 0x1F, 0x6A, 0x72]);
+            Console.WriteLine(ok2 ? "第二条指令补丁成功" : "第二条指令补丁失败");
+        }
+    }
+
+    /// <summary>
+    /// 设置总是暴击（李逍遥 6 倍暴击）
+    /// </summary>
+    public static void SetAlwaysCriticalHit() => TasMemory.WriteUInt32(TasMemory.RandomSeedAddr, 0x0055_5555);
+
+    /// <summary>
+    /// 设置总是最低伤害
+    /// </summary>
+    public static void SetNeverCriticalHit() => TasMemory.WriteUInt32(TasMemory.RandomSeedAddr, 0x008A_AAA7);
+
+    /// <summary>
+    /// 设置我方夺魂必中
+    /// </summary>
+    public static void SetDuoHunAlwaysKill() => TasMemory.WriteUInt32(TasMemory.RandomSeedAddr, 0x0054_5555);
 }

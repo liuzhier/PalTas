@@ -11,7 +11,7 @@ public static partial class TasScript
     /// </summary>
     public static TasProgress Progress { get; set; }
 #if DEBUG
-        = TasProgress.见石碑篇_下楼直走还魂香;
+    = TasProgress.见石碑篇_初登岛_过草妖;
 #endif // DEBUG
 
     /// <summary>
@@ -66,7 +66,10 @@ public static partial class TasScript
                     }
                     else if (SubStageId == 1)
                     {
-                        SetCurrentSceneEventTriggerMode(_4_醉倒酒剑仙, Core.EventTriggerMode.TouchNormal);
+                        // 设置醉倒酒剑仙自动互动
+                        var 醉倒酒剑仙 = GetEvent(4, _4_醉倒酒剑仙);
+                        醉倒酒剑仙.TriggerMode = Core.EventTriggerMode.TouchNormal;
+                        SetEventInfo(4, _4_醉倒酒剑仙, 醉倒酒剑仙);
 
                         Progress = TasProgress.见石碑篇_赶乞丐;
                         SubStageId = 0;
@@ -83,11 +86,14 @@ public static partial class TasScript
                     }
                     else if (SubStageId == 1)
                     {
-                        // 对话结束后酒菜才会出现
+                        // 和乞丐互动结束后酒菜才会出现
                         var 酒菜 = GetEvent(2, _2_酒菜);
                         if (酒菜.State == Core.EventState.NonObstacle)
                         {
-                            SetCurrentSceneEventTriggerMode(_4_醉倒酒剑仙, Core.EventTriggerMode.SearchNear);
+                            // 关闭醉倒酒剑仙自动互动
+                            var 醉倒酒剑仙 = GetEvent(4, _4_醉倒酒剑仙);
+                            醉倒酒剑仙.TriggerMode = Core.EventTriggerMode.SearchNear;
+                            SetEventInfo(4, _4_醉倒酒剑仙, 醉倒酒剑仙);
 
                             Progress = TasProgress.见石碑篇_去厨房帮大娘打下手;
                             SubStageId = 0;
@@ -120,7 +126,10 @@ public static partial class TasScript
                         var 酒菜 = GetCurrentSceneEvent(_2_酒菜);
                         if (酒菜.TriggerScript == 0x0247)
                         {
-                            SetCurrentSceneEventTriggerMode(_2_执灶李大娘, Core.EventTriggerMode.SearchFar);
+                            // 开启执灶李大娘自动互动
+                            var 执灶李大娘 = GetEvent(2, _2_执灶李大娘);
+                            执灶李大娘.TriggerMode = Core.EventTriggerMode.SearchFar;
+                            SetEventInfo(2, _2_执灶李大娘, 执灶李大娘);
 
                             Progress = TasProgress.见石碑篇_端酒菜;
                             SubStageId = 0;
@@ -133,7 +142,10 @@ public static partial class TasScript
                 {
                     if (SubStageId == 0)
                     {
-                        SetCurrentSceneEventTriggerMode(_2_酒菜, Core.EventTriggerMode.TouchNormal);
+                        // 开启互动拿起酒菜
+                        var 酒菜 = GetEvent(2, _2_酒菜);
+                        酒菜.TriggerMode = Core.EventTriggerMode.TouchNormal;
+                        SetEventInfo(2, _2_酒菜, 酒菜);
 
                         SetWalkPlanning(TasWalkPlans[Progress][0]);
                         SubStageId = 1;
@@ -157,25 +169,9 @@ public static partial class TasScript
 
             case TasProgress.见石碑篇_拿十里香:
                 {
-                    if (SubStageId == 0)
-                    {
-                        SetCurrentSceneEventTriggerMode(_2_十里香, Core.EventTriggerMode.TouchNormal);
+                    SetWalkPlanning(TasWalkPlans[Progress][0]);
 
-                        SetWalkPlanning(TasWalkPlans[Progress][0]);
-
-                        Progress = TasProgress.见石碑篇_将桂花酒交于酒剑仙;
-                        SubStageId = 0;
-                        //SubStageId = 1;
-                    }
-                    //else if (SubStageId == 1)
-                    //{
-                    //    var 床头十里香 = GetCurrentSceneEvent(15);
-                    //    if (床头十里香.State == Core.EventState.Hidden)
-                    //    {
-                    //        Progress = TasProgress.见石碑篇_将桂花酒交于酒剑仙;
-                    //        SubStageId = 0;
-                    //    }
-                    //}
+                    Progress = TasProgress.见石碑篇_将桂花酒交于酒剑仙;
                 }
                 break;
 
@@ -183,8 +179,11 @@ public static partial class TasScript
                 {
                     if (SubStageId == 0)
                     {
-                        SetEventTriggerScript(4, _4_醉倒酒剑仙, 0x028A);
-                        SetEventTriggerMode(4, _4_醉倒酒剑仙, Core.EventTriggerMode.TouchFar);
+                        // 开启醉倒酒剑仙自动互动
+                        var 醉倒酒剑仙 = GetEvent(4, _4_醉倒酒剑仙);
+                        醉倒酒剑仙.TriggerScript = 0x028A;
+                        醉倒酒剑仙.TriggerMode = Core.EventTriggerMode.TouchFar;
+                        SetEventInfo(4, _4_醉倒酒剑仙, 醉倒酒剑仙);
 
                         SetWalkPlanning(TasWalkPlans[Progress][0]);
                         SubStageId = 1;
@@ -194,13 +193,13 @@ public static partial class TasScript
                         // 删除道具：桂花酒
                         RemoveInventoryItem(TasItems.桂花酒);
 
-                        Progress = TasProgress.见石碑篇_不予理会直接出门;
+                        Progress = TasProgress.见石碑篇_不予理会直接出客栈;
                         SubStageId = 0;
                     }
                 }
                 break;
 
-            case TasProgress.见石碑篇_不予理会直接出门:
+            case TasProgress.见石碑篇_不予理会直接出客栈:
                 {
                     if (SubStageId == 0)
                     {
@@ -209,11 +208,95 @@ public static partial class TasScript
                     }
                     else if (SubStageId == 1)
                     {
-                        SetWalkPlanning(TasWalkPlans[Progress][0]);
+                        SetWalkPlanning(TasWalkPlans[Progress][1]);
 
-                        Progress = TasProgress.NULL;
+                        Progress = TasProgress.见石碑篇_大娘病倒了回客栈探望王小虎;
                         SubStageId = 0;
                     }
+                }
+                break;
+
+            case TasProgress.见石碑篇_大娘病倒了回客栈探望王小虎:
+                {
+                    if (SubStageId == 0)
+                    {
+                        SetWalkPlanning(TasWalkPlans[Progress][0]);
+                        SubStageId = 1;
+                    }
+                    else if (SubStageId == 1)
+                    {
+                        // 检查胖喵是否已经出现在客栈门口
+                        var 胖喵_树欲静而风不止 = GetEvent(4, _4_胖喵_树欲静而风不止);
+                        if (胖喵_树欲静而风不止.TriggerScript == 0x042E)
+                        {
+                            var 王小虎 = GetEvent(3, _3_王小虎);
+                            王小虎.TriggerMode = Core.EventTriggerMode.SearchNormal;
+                            SetEventInfo(3, _3_王小虎, 王小虎);
+                            王小虎.AutoScript = 0x0C03;
+
+                            SetWalkPlanning(TasWalkPlans[Progress][2]);
+
+                            Progress = TasProgress.见石碑篇_张四哥救人如救驾;
+                            SubStageId = 0;
+                        }
+                    }
+                }
+                break;
+
+            case TasProgress.见石碑篇_张四哥救人如救驾:
+                {
+                    if (SubStageId == 0)
+                    {
+                        SetWalkPlanning(TasWalkPlans[Progress][0]);
+                        SubStageId = 1;
+                    }
+                    else if (SubStageId == 1)
+                    {
+                        // 设置张四哥自动互动
+                        var 张四哥 = GetEvent(6, _6_张四哥);
+                        张四哥.TriggerMode = Core.EventTriggerMode.TouchFarther;
+                        SetEventInfo(6, _6_张四哥, 张四哥);
+
+                        SetWalkPlanning(TasWalkPlans[Progress][1]);
+                        SubStageId = 2;
+                    }
+                    else if (SubStageId == 2)
+                    {
+                        // 检查张四哥是否消失（被“撑蒿张四哥”换班站岗）
+                        var 张四哥 = GetEvent(6, _6_张四哥);
+                        if (张四哥.State == Core.EventState.Hidden)
+                        {
+                            张四哥.TriggerMode = Core.EventTriggerMode.SearchNormal;
+                            SetEventInfo(6, _6_张四哥, 张四哥);
+
+                            SetWalkPlanning(TasWalkPlans[Progress][2]);
+
+                            Progress = TasProgress.见石碑篇_张四哥救人如救驾;
+                            SubStageId = 0;
+                        }
+                    }
+                }
+                break;
+
+            case TasProgress.见石碑篇_初登岛_过草妖:
+                {
+                    if (SubStageId == 0)
+                    {
+                        SetWalkPlanning(TasWalkPlans[Progress][0]);
+
+                        SubStageId = 1;
+                    }
+                    else if (SubStageId == 1)
+                    {
+                        Progress = TasProgress.见石碑篇_初登岛_过迷阵;
+                        SubStageId = 0;
+                    }
+                }
+                break;
+
+            case TasProgress.见石碑篇_初登岛_过迷阵:
+                {
+
                 }
                 break;
         }

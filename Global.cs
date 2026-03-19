@@ -13,7 +13,7 @@ public static class TasGlobal
     /// <summary>
     /// 队伍当前正在向哪个方向移动
     /// </summary>
-    static TasDirection CurrentDirection { get; set; } = TasDirection.Current;
+   public static TasDirection CurrentDirection { get; set; } = TasDirection.Current;
 
     /// <summary>
     /// 全局行进步数
@@ -31,22 +31,18 @@ public static class TasGlobal
     public static bool TeamWalkPlanEnd { get; set; } = true;
 
     /// <summary>
-    /// 是否需要触发事件
-    /// </summary>
-    public static bool NeedSearchEvent { get; set; }
-
-    /// <summary>
-    /// 需要使用的道具在库存位置的Id
-    /// </summary>
-    public static TasItems InventoryItemId { get; set; } = TasItems.NULL;
-
-    /// <summary>
     /// 初始化全局数据
     /// </summary>
     public static void Init()
     {
         TasWindow.Init();
     }
+
+    /// <summary>
+    /// 程序延迟一小会
+    /// </summary>
+    public static async Task Delay(int millisecondsDelay, CancellationToken cancellationToken) =>
+        await Task.Delay(millisecondsDelay, cancellationToken);
 
     /// <summary>
     /// 检查指定场景编号是否为当前场景
@@ -114,9 +110,6 @@ public static class TasGlobal
             // 按下对应方向键
             PressKey(key);
         }
-
-        // 按下对应方向键
-        //PressKey(GetDirectionKey(CurrentDirection));
     }
 
     public static bool CheckTeamArrivedDestination(RPos destination)

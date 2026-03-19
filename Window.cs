@@ -1,4 +1,3 @@
-using PalTas.SimpleUtility;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Vanara.PInvoke;
@@ -29,7 +28,7 @@ public static unsafe class TasWindow
 
 #if DEBUG
         // 设置游戏无边框全屏
-        SetFullscreenWithoutBorder(WindowHandle);
+        //SetFullscreenWithoutBorder(WindowHandle);
 #endif // DEBUG
     }
 
@@ -80,7 +79,7 @@ public static unsafe class TasWindow
 #if DEBUG
         var gameDir = @"E:\Game\PAL98_v1.2";
 #else
-        var gameDir = Environment.CurrentDirectory;
+        var gameDir = $@"{Environment.CurrentDirectory}";
 #endif // DEBUG
         var palExePath = $@"{gameDir}\PAL.EXE";
 
@@ -207,15 +206,17 @@ public static unsafe class TasWindow
         if (PressedKeys.ContainsKey(key)) ReleaseKey(key);
 
         // 方法1: 使用 SendInput 发送 KEYDOWN 事件
+        var scanCode = (ushort)User32.MapVirtualKey((uint)key, 0);
         User32.INPUT[] inputs = [
                 new()
                 {
                     type = User32.INPUTTYPE.INPUT_KEYBOARD,
                     ki = new()
                     {
-                        wVk = key,
+                        wVk = 0,
+                        wScan = scanCode,
                         time = 0,
-                        dwFlags = User32.KEYEVENTF.KEYEVENTF_EXTENDEDKEY
+                        dwFlags = User32.KEYEVENTF.KEYEVENTF_SCANCODE,
                     }
                 }
             ];
@@ -223,7 +224,7 @@ public static unsafe class TasWindow
         if (User32.SendInput(inputs, sizeof(User32.INPUT)) > 0)
         {
             PressedKeys[key] = true;
-            Log($"按下键: {key}");
+            Log($"按下键: {key}，扫描码: 0x{scanCode:X2}");
             return true;
         }
 
@@ -245,15 +246,17 @@ public static unsafe class TasWindow
         if (key == User32.VK.VK_OEM_CLEAR) return false;
 
         // 方法1: 使用 SendInput 发送 KEYUP 事件
+        var scanCode = (ushort)User32.MapVirtualKey((uint)key, 0);
         User32.INPUT[] inputs = [
                 new()
                 {
                     type = User32.INPUTTYPE.INPUT_KEYBOARD,
                     ki = new()
                     {
-                        wVk = key,
+                        wVk = 0,
+                        wScan = scanCode,
                         time = 0,
-                        dwFlags = User32.KEYEVENTF.KEYEVENTF_KEYUP | User32.KEYEVENTF.KEYEVENTF_EXTENDEDKEY
+                        dwFlags = User32.KEYEVENTF.KEYEVENTF_KEYUP | User32.KEYEVENTF.KEYEVENTF_SCANCODE,
                     }
                 }
             ];
@@ -263,7 +266,7 @@ public static unsafe class TasWindow
         if (result > 0)
         {
             PressedKeys.TryRemove(key, out _);
-            Log($"释放键: {key}");
+            Log($"释放键: {key}，扫描码: 0x{scanCode:X2}");
             return true;
         }
 
@@ -283,6 +286,16 @@ public static unsafe class TasWindow
     /// </summary>
     public static void ReleaseAllKeys()
     {
-        foreach (var key in PressedKeys.Keys.ToList()) ReleaseKey(key);
+        CurrentDirection = TasDirection.Current;
+        //foreach (var key in PressedKeys.Keys.ToList()) ReleaseKey(key);
+
+        ReleaseKey(User32.VK.VK_RETURN);
+        ReleaseKey(User32.VK.VK_SPACE);
+        ReleaseKey(User32.VK.VK_LCONTROL);
+        ReleaseKey(User32.VK.VK_DOWN);
+        ReleaseKey(User32.VK.VK_LEFT);
+        ReleaseKey(User32.VK.VK_UP);
+        ReleaseKey(User32.VK.VK_RIGHT);
+        PressedKeys = [];
     }
 }
