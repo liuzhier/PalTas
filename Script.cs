@@ -11,7 +11,7 @@ public static partial class TasScript
     /// </summary>
     public static TasProgress Progress { get; set; }
 #if DEBUG
-    = TasProgress.见石碑篇_初登岛_过草妖;
+    //= TasProgress.见石碑篇_初登岛_过草妖;
 #endif // DEBUG
 
     /// <summary>

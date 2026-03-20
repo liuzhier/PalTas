@@ -76,10 +76,10 @@ public static unsafe class TasWindow
 #endif // DEBUG
 
         // 游戏目录
-#if DEBUG
+#if !DEBUG
         var gameDir = @"E:\Game\PAL98_v1.2";
 #else
-        var gameDir = $@"{Environment.CurrentDirectory}";
+        var gameDir = $@"{Environment.CurrentDirectory}\..";
 #endif // DEBUG
         var palExePath = $@"{gameDir}\PAL.EXE";
 

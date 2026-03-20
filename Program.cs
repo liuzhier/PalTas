@@ -1,5 +1,6 @@
 using Vanara.PInvoke;
 
+[assembly: System.Diagnostics.Debuggable(System.Diagnostics.DebuggableAttribute.DebuggingModes.DisableOptimizations | System.Diagnostics.DebuggableAttribute.DebuggingModes.Default)]
 namespace PalTas;
 
 public static class Program
