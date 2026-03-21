@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <PublishAot>true</PublishAot>
+        <InvariantGlobalization>false</InvariantGlobalization>
+        <NoWarn>CS8500</NoWarn>
+        <Platforms>x86</Platforms>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="Vanara.PInvoke.Kernel32" Version="5.0.1" />
+        <PackageReference Include="Vanara.PInvoke.Multimedia" Version="5.0.1" />
+        <PackageReference Include="Vanara.PInvoke.User32" Version="5.0.1" />
+    </ItemGroup>
+
+</Project>
