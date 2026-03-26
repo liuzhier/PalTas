@@ -1,3 +1,4 @@
+using Avalonia.Threading;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Vanara.PInvoke;
 
-namespace PalTas;
+namespace PalTas.TasCore;
 
 public static class TasWindow
 {
@@ -72,26 +73,34 @@ public static class TasWindow
     /// </summary>
     public static void OpenGame()
     {
-        Log("关闭PAL相关进程...");
+        Log("关闭相关进程...");
+        KillProcessByName("MSIAfterburner");
+        KillProcessByName("RTSS");
         KillProcessByName("Pal");
+
+        Sleep(300);
 
         // 游戏目录
 #if DEBUG
         var gameDir = @"E:\Game\PAL98_v1.2";
         //var gameDir = @"E:\Game\Pal3.0";
 #else
-        var gameDir = $@"{Environment.CurrentDirectory}";
+        var gameDir = $@"{Environment.CurrentDirectory}\..\";
 #endif // DEBUG
         var palExePath = $@"{gameDir}\PAL.EXE";
-
-        // 等待一小会儿，使程序完全退出
-        Sleep(300);
 
         // 启动游戏
         Log("启动游戏...");
         var gameProcess = Process.Start(new ProcessStartInfo
         {
             FileName = palExePath,
+            WorkingDirectory = gameDir,
+            UseShellExecute = true
+        });
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "MSI Afterburner",
             WorkingDirectory = gameDir,
             UseShellExecute = true
         });
@@ -200,7 +209,7 @@ public static class TasWindow
                 needReleaseAllKeys = false;
 
                 // 释放所有按键状态避免卡键
-                ReleaseAllKeys();
+                await ReleaseAllKeys(token);
             }
         }
     }
@@ -212,6 +221,8 @@ public static class TasWindow
     /// <returns>是否成功按下</returns>
     public static unsafe bool PressKey(User32.VK key)
     {
+        var result = false;
+
         // 如果窗口为前台活动窗口，才发送按键事件
         if (User32.GetForegroundWindow() != WindowHandle) return false;
 
@@ -237,15 +248,18 @@ public static class TasWindow
                 }
             ];
 
-        if (User32.SendInput(inputs, sizeof(User32.INPUT)) > 0)
+        Dispatcher.UIThread.Post(() =>
         {
-            PressedKeys[key] = true;
-            Log($"按下键: {key}，扫描码: 0x{scanCode:X2}");
-            return true;
-        }
+            if (User32.SendInput(inputs, sizeof(User32.INPUT)) > 0)
+            {
+                PressedKeys[key] = true;
+                Log($"按下键: {key}，扫描码: 0x{scanCode:X2}");
+                result = true;
+            }
+        });
 
         // 发送失败
-        return false;
+        return result;
     }
 
     /// <summary>
@@ -255,6 +269,8 @@ public static class TasWindow
     /// <returns>是否成功释放</returns>
     public static unsafe bool ReleaseKey(User32.VK key)
     {
+        var result = false;
+
         // 如果窗口为前台活动窗口，才发送按键事件
         if ((User32.GetForegroundWindow() != WindowHandle)) return false;
 
@@ -277,17 +293,19 @@ public static class TasWindow
                 }
             ];
 
-        uint result = User32.SendInput(inputs, sizeof(User32.INPUT));
 
-        if (result > 0)
+        Dispatcher.UIThread.Post(() =>
         {
-            PressedKeys.TryRemove(key, out _);
-            Log($"释放键: {key}，扫描码: 0x{scanCode:X2}");
-            return true;
-        }
+            if (User32.SendInput(inputs, sizeof(User32.INPUT)) > 0)
+            {
+                PressedKeys.TryRemove(key, out _);
+                Log($"释放键: {key}，扫描码: 0x{scanCode:X2}");
+                result = true;
+            }
+        });
 
         // 释放失败
-        return false;
+        return result;
     }
 
     /// <summary>
@@ -300,17 +318,20 @@ public static class TasWindow
     /// <summary>
     /// 释放所有按下的键
     /// </summary>
-    public static void ReleaseAllKeys()
+    public static async Task ReleaseAllKeys(CancellationToken token)
     {
         CurrentDirection = TasDirection.Current;
         //foreach (var key in PressedKeys.Keys.ToList()) ReleaseKey(key);
 
         ReleaseKey(User32.VK.VK_RETURN);
         ReleaseKey(User32.VK.VK_SPACE);
+        await Delay(1, token);
         ReleaseKey(User32.VK.VK_LCONTROL);
         ReleaseKey(User32.VK.VK_DOWN);
+        await Delay(1, token);
         ReleaseKey(User32.VK.VK_LEFT);
         ReleaseKey(User32.VK.VK_UP);
+        await Delay(1, token);
         ReleaseKey(User32.VK.VK_RIGHT);
         PressedKeys = [];
     }

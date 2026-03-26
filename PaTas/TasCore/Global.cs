@@ -1,11 +1,12 @@
-using PalTas.Records;
+using PalTas.TasCore.Records;
 using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Vanara.PInvoke;
+using static Vanara.PInvoke.User32;
 
-namespace PalTas;
+namespace PalTas.TasCore;
 
 public static class TasGlobal
 {
@@ -45,15 +46,23 @@ public static class TasGlobal
     /// <summary>
     /// 程序延迟一小会
     /// </summary>
+    /// <param name="milliseconds">延迟的毫秒数</param>
+    /// <param name="token">任务令牌</param>
+    /// <returns>当前任务</returns>
     public static async Task Delay(int milliseconds, CancellationToken token)
     {
-        //await Task.Delay(milliseconds, token);
+        await Task.Delay(milliseconds, token);
 
         //Sleep(1);
-        milliseconds *= 100000;
-        for (var i = 0; i < milliseconds && !token.IsCancellationRequested; i++) ;
-            //Thread.SpinWait(1);
+        //milliseconds *= 100000;
+        //for (var i = 0; i < milliseconds && !token.IsCancellationRequested; i++) ;
+        //Thread.SpinWait(1);
     }
+
+    /// <summary>
+    /// 程序延迟一小会
+    /// </summary>
+    public static async Task Delay(int milliseconds = 1) => await Task.Delay(milliseconds);
 
     /// <summary>
     /// 检查指定场景编号是否为当前场景
@@ -66,9 +75,21 @@ public static class TasGlobal
     /// 检查游戏是否正式开始
     /// </summary>
     /// <returns>游戏是否正式开始</returns>
-    public static void WaitGameOfficialStart()
+    public static async Task<bool> WaitGameOfficialStart()
     {
-        while ((CurrentSceneId == 0) || (CurrentSceneId == 0xFFFF)) CheckSceneSwitched();
+        while ((CurrentSceneId == 0) || (CurrentSceneId == 0xFFFF))
+        {
+            await Delay(2);
+
+            if (TasMain.NeedExit)
+                // 程序被退出
+                return false;
+
+            // 检查游戏是否正在运行
+            CheckSceneSwitched();
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -174,12 +195,11 @@ public static class TasGlobal
     public static bool CheckInventoryItem(TasItems itemId, int num = 1)
     {
         var count = 0;
-        var item = (ushort)itemId;
 
         for (var i = 0; i < MAX_INVENTORY; i++)
         {
             var inventoryItem = GetInventoryItem(i);
-            if (inventoryItem.ItemId == item)
+            if (inventoryItem.ItemId == itemId)
             {
                 count += inventoryItem.Count;
                 if (count >= num) return true;
@@ -196,12 +216,10 @@ public static class TasGlobal
     /// <returns>在道具列表中的索引（位置），未找到则返回 -1</returns>
     public static short GetItemIdInInventory(TasItems itemId)
     {
-        var item = (ushort)itemId;
-
         for (var i = (short)0; i < MAX_INVENTORY; i++)
         {
             var inventoryItem = GetInventoryItem(i);
-            if ((inventoryItem.ItemId == item) && (inventoryItem.Count > 0))
+            if ((inventoryItem.ItemId == itemId) && (inventoryItem.Count > 0))
                 return i;
         }
 

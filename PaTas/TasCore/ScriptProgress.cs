@@ -1,4 +1,4 @@
-namespace PalTas;
+namespace PalTas.TasCore;
 
 public static partial class TasScript
 {
@@ -10,7 +10,7 @@ public static partial class TasScript
         见石碑篇_出房间,
         // 去二楼楼道接客，得到 500 文
         见石碑篇_接客,
-        // 下楼向右下直走，尽头的箱子里呦还魂香
+        // 下楼向右下直走，尽头的箱子里有还魂香
         见石碑篇_下楼直走还魂香,
         // 李大娘发现乞丐在门口影响生意，吩咐我们把乞丐赶走
         见石碑篇_大娘吩咐赶乞丐,
@@ -36,5 +36,8 @@ public static partial class TasScript
         见石碑篇_初登岛_过草妖,
         // 打碎所有的阿修罗石像，踩踏石板即可破阵
         见石碑篇_初登岛_过迷阵,
+
+
+        赤鬼王测试,
     }
 }

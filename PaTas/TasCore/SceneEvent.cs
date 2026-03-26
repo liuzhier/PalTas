@@ -1,9 +1,9 @@
-using PalTas.Records;
+using PalTas.TasCore.Records;
 using System.Threading;
 using System.Threading.Tasks;
-using static PalTas.TasScript.SceneEvent;
+using static PalTas.TasCore.TasScript.SceneEvent;
 
-namespace PalTas;
+namespace PalTas.TasCore;
 
 public static partial class TasScript
 {
@@ -45,6 +45,7 @@ public static partial class TasScript
 
     public static async Task InitGlobalSceneEventAsync(CancellationToken token)
     {
+        return;
         await Delay(2000, token);
 
         // 见石碑篇_出房间

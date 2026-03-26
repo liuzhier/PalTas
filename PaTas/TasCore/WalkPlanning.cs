@@ -1,8 +1,8 @@
-using PalTas.Records;
+using PalTas.TasCore.Records;
 using System.Collections.Generic;
 using static Vanara.PInvoke.Gdi32;
 
-namespace PalTas;
+namespace PalTas.TasCore;
 
 public static partial class TasScript
 {
@@ -13,17 +13,7 @@ public static partial class TasScript
     {
         [TasProgress.见石碑篇_出房间] = [
             [
-                // ↓前往门口的场景切换点
-                new(1216, 352),
-                // ↓前往门口的场景切换点
-                new(1264, 376),
-                // ↓前往门口的场景切换点
-                new(1232, 360),
-                // ↓前往门口的场景切换点
-                new(1184, 384),
-            ],
-            [
-                // ↓前往门口的场景切换点
+                // ↓出房间
                 new(1168, 376),
             ],
         ],
@@ -45,9 +35,9 @@ public static partial class TasScript
                 // →前往库房门口（↑自动上切纠正身位，因下楼被李大娘挤开了）
                 new(1408, 1536),
                 // →前往右边尽头的箱子附近
-                new(1488, 1576),
+                //new(1488, 1576),
                 // →前往右边尽头的箱子（滑步取物）
-                new(1552, 1608),
+                new(1552, 1608, NeedPreInput: true),
             ],
         ],
         [TasProgress.见石碑篇_大娘吩咐赶乞丐] = [
@@ -59,17 +49,16 @@ public static partial class TasScript
                 // ↓跑到尽头
                 new(1232, 1768),
                 // ←走到酒剑仙头边（多走一格）
-                //new(1040, 1672),
-                new(1024, 1664),
+                new(1040, 1672),
+                //new(1024, 1664),
                 // ↑走到李大娘面前
-                //new(1104, 1640),
-                new(1088, 1632),
+                new(1104, 1640),
             ],
         ],
         [TasProgress.见石碑篇_赶乞丐] = [
             [
-                // ↓
-                new(1024, 1664),
+                // ↓蹴尔而与之，乞人不屑也
+                new(1040, 1672, NeedPreInput: true),
             ],
         ],
         [TasProgress.见石碑篇_去厨房帮大娘打下手] = [
@@ -87,8 +76,7 @@ public static partial class TasScript
                 // ←前往灶间门口
                 new(496, 1192, SceneId: 2),
                 // ↑找李大娘对话
-                new(656, 1112),
-                //new(672, 1104),
+                new(656, 1112, NeedPreInput: true),
             ],
         ],
         [TasProgress.见石碑篇_端酒菜] = [
@@ -96,7 +84,7 @@ public static partial class TasScript
                 // ↓
                 new(640, 1120),
                 // →端酒菜
-                new(656, 1128),
+                new(656, 1128, NeedPreInput: true),
             ],
             [
                 // ↓
@@ -128,7 +116,7 @@ public static partial class TasScript
                 // ↑
                 new(1424, 1016),
                 // →
-                new(1456, 1032),
+                new(1456, 1032, NeedPreInput: true),
             ],
         ],
         [TasProgress.见石碑篇_将桂花酒交于酒剑仙] = [
@@ -148,7 +136,7 @@ public static partial class TasScript
                 // →
                 new(1168, 1592),
                 // ↓走到足够向酒剑仙交付酒的位置
-                new(1040, 1656),
+                new(1040, 1656, NeedUseItemId: TasItems.桂花酒),
             ],
         ],
         [TasProgress.见石碑篇_不予理会直接出客栈] = [
@@ -202,19 +190,17 @@ public static partial class TasScript
                 // ↑
                 new(1264, 744, SceneId: 3),
                 // ←拿还神丹
-                new(1200, 712),
+                new(1200, 712, NeedPreInput: true),
                 // ↑拿驱魔香
-                new(1344, 640,  Direction: TasDirection.Up),
+                new(1344, 640, NeedPreInput: true, Direction: TasDirection.Left),
                 // ↑拿忘魂花
-                new(1440, 688),
+                new(1440, 688, NeedPreInput: true),
                 // ↓洪大夫爱莫能助
                 new(1408, 704),
                 // →感谢王小虎
-                new(1424, 712),
+                new(1424, 712, NeedPreInput: true),
             ],
             [
-                // ←
-                new(1408, 704),
                 // ←
                 new(1392, 696),
                 // ↓出婶婶房间
@@ -243,9 +229,7 @@ public static partial class TasScript
                 // ↑
                 new(976, 1288, SceneId: 6),
                 // →救人如救驾
-                new(1104, 1352),
-            ],
-            [
+                new(1104, 1352, NeedPreInput: true),
                 // →走吧上船
                 new(1184, 1392),
             ],
@@ -297,7 +281,7 @@ public static partial class TasScript
                 // ↓
                 new(352, 864),
                 // →砸石像 8
-                new(544, 960),
+                new(544, 960, NeedUseItemId: TasItems.破天锤),
                 // ←
                 new(352, 864),
                 // ↑
@@ -326,7 +310,7 @@ public static partial class TasScript
                 // ←
                 new(1584, 920),
                 // ↑砸石像 7
-                new(1744, 840),
+                new(1744, 840, NeedUseItemId: TasItems.破天锤),
                 // ↓
                 new(1584, 920),
                 // →
@@ -340,7 +324,7 @@ public static partial class TasScript
                 // →
                 new(1232, 1400),
                 // ↑砸石像 9
-                new(1440, 1296),
+                new(1440, 1296, NeedUseItemId: TasItems.破天锤),
                 // ↓
                 new(1232, 1400),
                 // ←
@@ -371,7 +355,7 @@ public static partial class TasScript
                 // →
                 new(1312, 464),
                 // ↑拿五张灵符 30
-                new(1392, 424,  Direction: TasDirection.Right),
+                new(1392, 424, NeedPreInput: true, Direction: TasDirection.Right),
             ],
             // 4 北荒伏火怪
             [
@@ -390,7 +374,7 @@ public static partial class TasScript
                 // ↑
                 new(1696, 384),
                 // ←砸石像 6
-                new(1504, 288),
+                new(1504, 288, NeedUseItemId: TasItems.破天锤),
             ],
             // 5 终以平水患
             [
@@ -413,7 +397,7 @@ public static partial class TasScript
                 // ↑
                 new(752, 360),
                 // ←砸石像 5
-                new(528, 248),
+                new(528, 248, NeedUseItemId: TasItems.破天锤),
                 // →
                 new(752, 360),
                 // ↓
@@ -427,7 +411,7 @@ public static partial class TasScript
                 // ↓上芦苇漂 24
                 new(1088, 736),
                 // ←砸石像 4
-                new(464, 504),
+                new(464, 504, NeedUseItemId: TasItems.破天锤),
                 // →上芦苇漂 24
                 new(560, 552),
             ],

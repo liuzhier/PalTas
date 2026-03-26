@@ -1,8 +1,8 @@
 <Solution>
   <Configurations>
-    <Platform Name="x86" />
+    <Platform Name="AnyCPU" />
   </Configurations>
-  <Project Path="PalTas\PalTas.csproj">
-    <Platform Project="x86" />
+  <Project Path="PaTas/PalTas.csproj">
+    <Platform Project="AnyCPU" />
   </Project>
 </Solution>

@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace PalTas.Records;
+namespace PalTas.TasCore.Records;
 
 public static class Core
 {

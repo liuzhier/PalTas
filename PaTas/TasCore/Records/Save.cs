@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace PalTas.Records;
+namespace PalTas.TasCore.Records;
 
 /// <summary>
 /// 坐标
@@ -40,7 +40,7 @@ public struct RMemberTrailRelativeToViewport
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct RInventory
 {
-    public  ushort      ItemId;             // 道具编号
-    public  ushort      Count;              // 数量
-    public  ushort      DeductionCount;     // 本回合预计消耗数（只在内存中有效哦！）
+    public  TasItems        ItemId;             // 道具编号
+    public  ushort          Count;              // 数量
+    public  ushort          DeductionCount;     // 本回合预计消耗数（只在内存中有效哦！）
 }

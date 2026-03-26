@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Vanara.PInvoke;
 
-namespace PalTas;
+namespace PalTas.TasCore;
 
 public static unsafe class TasMemory
 {
@@ -20,17 +20,25 @@ public static unsafe class TasMemory
         CURRENT_SCENE_ID                        = 0x0000_026A,                  // 当前场景编号
         LEADER_DIRECTION                        = 0x0000_026E,                  // 领队当前面朝方向
         CURRENT_SCENE_MAX_EVENT_ID              = 0x0000_0296,                  // 当前场景事件最大编号
+        CURRENT_ACTOR_SELECTOR_ID               = 0x0000_02C2,                  // 【战斗】我方轮到谁选动作
+        BATTLE_ENEMY_MAX_ID                     = 0x0000_02DE,                  // 【战斗】敌方最大索引
         INVENTORY_ITEM_ID                       = 0x0000_02F0,                  // 道具列表光标
+        CURRENT_ACTOR_ID                        = 0x0000_0312,                  // 【战斗】轮到谁执行动作（不区分阵营）
+        CURRENT_ACTION_TEAM                     = 0x0000_031C,                  // 【战斗】当前是那一阵营在执行动作<-1敌 0我>
         SCENE                                   = 0x0000_0398,                  // 连续结构：场景
         MEMBER_TRAIL_RELATIVE_TO_VIEWPORT       = 0x0000_04B8,                  // 连续结构：队伍相对于视口的步伐
         //MEMBER_TRAIL_RELATIVE_TO_VIEWPORT       = 0x0000_0274,                  // 连续结构：队伍相对于视口的步伐
         MEMBER_TRAIL                            = 0x0000_04D0,                  // 连续结构：队伍步伐
-        ENEMY_BATTLE_TEMP_DATA                  = 0x0000_05C0,                  // 连续结构：战斗中敌方的战斗临时数据
+        MEMBER_ROUND_ACTION                     = 0x0000_05A8,                  // 【战斗】连续结构：队员本回合的行动动作
+        ENEMY_BATTLE_TEMP_DATA                  = 0x0000_05C0,                  // 【战斗】连续结构：战斗中敌方的战斗临时数据
+        MEMBER_SPECIAL_STATUS                   = 0x0000_06D0,                  // 【战斗】连续结构：队员的增益/恶性状态
+        MEMBER_POISON_STATUS                    = 0x0000_0710,                  // 【战斗】连续结构：队员的增益/恶性状态（需解引用）
+        ENTITY                                  = 0x0000_0750,                  // 连续结构：实体对象（需解引用）
         INVENTORY                               = 0x0000_0768,                  // 连续结构：道具列表
         CURRENT_SCENE_EVENT                     = 0x0000_07E8,                  // 连续结构：当前场景事件
-        CURRENT_ENEMY_TEAM_ID                   = PAL_EXE + 0x0017_7BC8,        // 当前敌方队伍编号
+        CURRENT_ENEMY_TEAM_ID                   = PAL_EXE + 0x0017_7BC8,        // 【战斗】当前敌方队伍编号
         IS_IN_BATTLE                            = 0x0007_1E50,                  // PAL.DLL v1.02 是否在战斗之中
-        RANDOM_SEED                             = 0x0007_1FCC;                  // PAL.DLL v1.02 随机数种子
+        RANDOM_RESULT                           = 0x0007_1FCC;                  // PAL.DLL v1.02 随机数结果（原意义为种子）
 
     /// <summary>
     /// 进程句柄
@@ -51,6 +59,8 @@ public static unsafe class TasMemory
             return addr;
         }
     }
+    public static uint EntityDataAddr => ReadUInt32(PalBaseAddr + ENTITY);
+    public static uint ScriptEntryAddr => ReadUInt32(ReadUInt32(PalBaseAddr + 0x0000_003C) - 0x0000_0B88);
     public static uint EventAddr => PalBaseAddr + EVENT;
     public static uint CurrentSceneEventAddr => PalBaseAddr + CURRENT_SCENE_EVENT;
     public static uint EventMaxIdAddr => PalBaseAddr + CURRENT_SCENE_MAX_EVENT_ID;
@@ -59,16 +69,23 @@ public static unsafe class TasMemory
     public static uint ViewportPosAddr => PalBaseAddr + VIEWPORT_POSITION;
     public static uint CurrentSceneIdAddr => PalBaseAddr + CURRENT_SCENE_ID;
     public static uint LeaderDirectionAddr => PalBaseAddr + LEADER_DIRECTION;
+    public static uint CurrentActorSelectorIdAddr => PalBaseAddr + CURRENT_ACTOR_SELECTOR_ID;
+    public static uint BattleEnemyMaxIdAddr => PalBaseAddr + BATTLE_ENEMY_MAX_ID;
     public static uint InventoryItemIdAddr => PalBaseAddr + INVENTORY_ITEM_ID;
+    public static uint CurrentActorIdAddr => PalBaseAddr + CURRENT_ACTOR_ID;
+    public static uint CurrentActorTeamAddr => PalBaseAddr + CURRENT_ACTION_TEAM;
     public static uint SceneAddr => PalBaseAddr + SCENE;
     public static uint MemberTrailRelativeToViewportAddr => PalBaseAddr + MEMBER_TRAIL_RELATIVE_TO_VIEWPORT;
+    public static uint MemberRoundActionAddr => PalBaseAddr + MEMBER_ROUND_ACTION;
     public static uint EnemyBattleTempDataAddr => PalBaseAddr + ENEMY_BATTLE_TEMP_DATA;
+    public static uint MemberSpecialStatusAddr => PalBaseAddr + MEMBER_SPECIAL_STATUS;
+    public static uint MemberPoisonStatusAddr => PalBaseAddr + MEMBER_POISON_STATUS;
     public static uint InventoryAddr => PalBaseAddr + INVENTORY;
     public static uint MemberTrailAddr => PalBaseAddr + MEMBER_TRAIL;
     public static uint CurrentEnemyTeamIdAddr => CURRENT_ENEMY_TEAM_ID;
     public static uint PalDllAddr => (uint)GetPalModuleBase();
     public static uint IsInBattleAddr => PalDllAddr + IS_IN_BATTLE;
-    public static uint RandomSeedAddr => PalDllAddr + RANDOM_SEED;
+    public static uint RandomResultAddr => PalDllAddr + RANDOM_RESULT;
 
     /// <summary>
     /// 初始化内存模块
@@ -287,4 +304,5 @@ public static unsafe class TasMemory
     /// 写入4字节数据
     /// </summary>
     public static bool WriteUInt32(uint baseAddress, uint value, params uint[] offsets) => WriteMemory(baseAddress, value, offsets);
+    public static bool WriteSingle(uint baseAddress, float value, params uint[] offsets) => WriteMemory(baseAddress, value, offsets);
 }
