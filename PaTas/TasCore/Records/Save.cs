@@ -29,7 +29,7 @@ public struct RMemberTrail
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct RMemberTrailRelativeToViewport
 {
-    public  ushort              HeroId;             // 形象编号
+    public  TasHero             HeroId;             // 形象编号
     public  RMemberTrail        RelativeTrail;      // 坐标 X, Y（相对于视角）
     public  ushort              FrameOffset;        // 形象帧偏移（原地行走 012）
 }

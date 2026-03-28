@@ -8,6 +8,7 @@ using static PalTas.TasCore.Records.Core;
 using static PalTas.TasCore.Records.Game;
 using static System.Net.Mime.MediaTypeNames;
 using static Vanara.PInvoke.Kernel32;
+using static Vanara.PInvoke.User32;
 using static Vanara.PInvoke.WinMm;
 
 namespace PalTas.TasCore;
@@ -80,7 +81,7 @@ public static unsafe class TasData
             SpriteId = TasMemory.ReadUInt16(baseOffset, sizeof(ushort) * 8),
             FramesPerDirection = TasMemory.ReadUInt16(baseOffset, sizeof(ushort) * 9),
             Direction = (TasDirection)TasMemory.ReadUInt16(baseOffset, sizeof(ushort) * 10),
-            CurrentFrameId = TasMemory.ReadUInt16(baseOffset, sizeof(ushort) * 1),
+            CurrentFrameId = TasMemory.ReadUInt16(baseOffset, sizeof(ushort) * 11),
             TriggerIdleFrame = TasMemory.ReadUInt16(baseOffset, sizeof(ushort) * 12),
             AutoIdleFrame = TasMemory.ReadUInt16(baseOffset, sizeof(ushort) * 13),
         };
@@ -102,10 +103,11 @@ public static unsafe class TasData
     {
         if (memberId < 0 || memberId > (MAX_MEMBER_COUNT - 1)) return default;
 
-        var baseOffset = TasMemory.MemberTrailRelativeToViewportAddr + (uint)(memberId * sizeof(RMemberTrailRelativeToViewport));
+        var baseAddr = TasMemory.ReadUInt32(TasMemory.MemberTrailRelativeToViewportAddr);
+        var baseOffset = baseAddr + (uint)(memberId * sizeof(RMemberTrailRelativeToViewport));
         return new()
         {
-            HeroId = TasMemory.ReadUInt16(baseOffset, sizeof(ushort) * 0),
+            HeroId = (TasHero)TasMemory.ReadUInt16(baseOffset, sizeof(ushort) * 0),
             RelativeTrail = new()
             {
                 Pos = new()
@@ -424,13 +426,11 @@ public static unsafe class TasData
                 ];
 
                 // 填充地址
-                Buffer.BlockCopy(BitConverter.GetBytes(TasMemory.PalDllAddr + 0x0007_1E44), 0, patch, 4, 4);
+                var addrPalDll_71E44 =BitConverter.GetBytes(TasMemory.PalDllAddr + 0x0007_1E44);
+                Buffer.BlockCopy(addrPalDll_71E44, 0, patch, 4, 4);
                 Buffer.BlockCopy(BitConverter.GetBytes(TasMemory.PalDllAddr + 0x0007_0B7C), 0, patch, 22, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(TasMemory.PalDllAddr + 0x0007_1E44), 0, patch, 44, 4);
+                Buffer.BlockCopy(addrPalDll_71E44, 0, patch, 44, 4);
             }
-
-            foreach (var code in patch) File.AppendAllText(@"C:\Users\22988\Desktop\ooo.txt", $"0x{code:X2}\n");
-            File.AppendAllText(@"C:\Users\22988\Desktop\ooo.txt", $"=================================\n");
 
             // 补丁指令
             Log(PatchInstruction(handle, instr1Addr, patch) ? "指令补丁成功" : "指令补丁失败");
@@ -525,7 +525,8 @@ public static unsafe class TasData
     /// </summary>
     /// <param name="enemyId">敌人实体编号</param>
     /// <param name="resilience">巫抗</param>
-    public static void SetEnemyResilience(TasEnemys enemyId, ushort resilience) => TasMemory.WriteUInt16(TasMemory.EntityDataAddr, resilience, (uint)enemyId * 0x000E + sizeof(ushort) * 1);
+    public static void SetEnemyResilience(TasEnemys enemyId, ushort resilience) =>
+        TasMemory.WriteUInt16(TasMemory.ReadUInt32(TasMemory.EntityDataAddr), resilience, (uint)enemyId * 0x000E + sizeof(ushort) * 1);
 
     /// <summary>
     /// 修改脚本内容
@@ -534,14 +535,15 @@ public static unsafe class TasData
     /// <param name="codes">实际内容</param>
     public static void SetScriptEntry(ushort address, ushort[] codes)
     {
-        var scr = TasMemory.ReadUInt16(TasMemory.ScriptEntryAddr, (uint)(address * 0x0008), sizeof(ushort) * 0);
-        var arg1 = TasMemory.ReadUInt16(TasMemory.ScriptEntryAddr, (uint)(address * 0x0008), sizeof(ushort) * 1);
-        var arg2 = TasMemory.ReadUInt16(TasMemory.ScriptEntryAddr, (uint)(address * 0x0008), sizeof(ushort) * 2);
-        var arg3 = TasMemory.ReadUInt16(TasMemory.ScriptEntryAddr, (uint)(address * 0x0008), sizeof(ushort) * 3);
-        //var str = $"@{address:X4}: {scr:X4} {arg1:X4} {arg2:X4} {arg3:X4}";
+        var baseAddr = TasMemory.ReadUInt32(TasMemory.ScriptEntryAddr);
+        var scr = TasMemory.ReadUInt16(baseAddr, (uint)(address * 0x0008), sizeof(ushort) * 0);
+        var arg1 = TasMemory.ReadUInt16(baseAddr, (uint)(address * 0x0008), sizeof(ushort) * 1);
+        var arg2 = TasMemory.ReadUInt16(baseAddr, (uint)(address * 0x0008), sizeof(ushort) * 2);
+        var arg3 = TasMemory.ReadUInt16(baseAddr, (uint)(address * 0x0008), sizeof(ushort) * 3);
+        var str = $"@{address:X4}: {scr:X4} {arg1:X4} {arg2:X4} {arg3:X4}";
 
         for (var i = 0; i < codes.Length; i++)
-            TasMemory.WriteUInt16(TasMemory.ScriptEntryAddr, codes[i], (uint)(address * 0x0008 + sizeof(ushort) * i));
+            TasMemory.WriteUInt16(baseAddr, codes[i], (uint)(address * 0x0008 + sizeof(ushort) * i));
     }
 
     /// <summary>
@@ -581,7 +583,81 @@ public static unsafe class TasData
     /// </summary>
     public static void SetMemberSpecialStatus(int member, TasSpecialStatus specialStatus, ushort roundCount)
     {
-        var baseAddr = (uint)(TasMemory.ReadUInt32(TasMemory.MemberSpecialStatusAddr) + ((int)specialStatus * MAX_MEMBER_COUNT + member) * sizeof(ushort));
-        TasMemory.WriteUInt16(baseAddr, roundCount);
+        var baseAddr = TasMemory.ReadUInt32(TasMemory.MemberSpecialStatusAddr);
+        var offsetAddr = (uint)((ushort)specialStatus * MAX_MEMBER_COUNT + member) * sizeof(ushort);
+        TasMemory.WriteUInt16(baseAddr + offsetAddr, roundCount);
+    }
+
+    /// <summary>
+    /// 获取触发当前战斗的脚本地址
+    /// </summary>
+    public static ushort TriggerBattleScriptAddress => TasMemory.ReadUInt16(TasMemory.TriggerBattleScriptAddressAddr);
+
+    /// <summary>
+    /// 获取 Hero 指定属性的装备总加成
+    /// </summary>
+    /// <param name="heroId">Hero 编号</param>
+    /// <param name="extraAttributeId">额外属性编号</param>
+    /// <returns>Hero 指定属性的装备总加成</returns>
+    public static short GetHeroExtraAttribute(TasHero heroId, TasHeroExtraAttribute extraAttributeId)
+    {
+        var baseAddr = TasMemory.ReadUInt32(TasMemory.HeroExtraAttributeAddr);
+        var offsetAddr = MAX_HERO_BATTLE_EQUIPMENT_COUNT * MAX_HERO_COUNT * (ushort)extraAttributeId;
+
+        var attribute = (short)0;
+        for (var i = 0; i < MAX_HERO_BATTLE_EQUIPMENT_COUNT; i++)
+        {
+            var actualOffsetAddr = (offsetAddr + MAX_HERO_COUNT * i + (ushort)heroId) * sizeof(ushort);
+
+            attribute += TasMemory.ReadInt16(baseAddr, (uint)actualOffsetAddr);
+        }
+
+        return attribute;
+    }
+
+    /// <summary>
+    /// 设置 Hero 临时属性
+    /// </summary>
+    /// <param name="heroId">hero 编号</param>
+    /// <param name="extraAttributeId">额外属性编号</param>
+    /// <param name="value"></param>
+    public static void SetHeroTempAttribute(TasHero heroId, TasHeroExtraAttribute extraAttributeId, short value)
+    {
+        var baseAddr = TasMemory.ReadUInt32(TasMemory.HeroExtraAttributeAddr);
+        var offsetAddr = MAX_HERO_BATTLE_EQUIPMENT_COUNT * MAX_HERO_COUNT * (ushort)extraAttributeId;
+        var actualOffsetAddr = (offsetAddr + MAX_HERO_COUNT * (ushort)TasEquipType.临时 + (ushort)heroId) * sizeof(ushort);
+
+        TasMemory.WriteInt16(baseAddr, value, (uint)actualOffsetAddr);
+    }
+
+    /// <summary>
+    /// 获取 hero 指定属性的实际数值
+    /// </summary>
+    /// <param name="heroId">hero 编号</param>
+    /// <param name="extraAttributeId">属性编号</param>
+    /// <returns>hero 指定属性的实际数值</returns>
+    public static short GetHeroAttribute(TasHero heroId, TasHeroAttribute heroAttributeId)
+    {
+        var baseAddr = TasMemory.ReadUInt32(TasMemory.HeroBaseDataAddr);
+        var offsetAddr = ((ushort)heroAttributeId * MAX_HERO_COUNT + (ushort)heroId) * sizeof(ushort);
+
+        return TasMemory.ReadInt16(baseAddr, (uint)offsetAddr);
+    }
+
+    /// <summary>
+    /// 获取 Hero 指定属性的实际数值
+    /// </summary>
+    /// <param name="heroId">Hero 编号</param>
+    /// <param name="extraAttributeId">属性编号</param>
+    /// <returns>Hero 指定属性的实际数值</returns>
+    public static short GetHeroActualAttribute(TasHero heroId, TasHeroAttribute heroAttributeId)
+    {
+        var value = GetHeroAttribute(heroId, heroAttributeId);
+
+        if ((heroAttributeId >= TasHeroAttribute.武术) && (heroAttributeId <= TasHeroAttribute.避土率))
+            // 加上装备加成和道具临时加成
+            value += GetHeroExtraAttribute(heroId, (TasHeroExtraAttribute)(heroAttributeId - TasHeroAttribute.武术));
+
+        return value;
     }
 }

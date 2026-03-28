@@ -1,3 +1,4 @@
+using PalTas.TasCore.Records;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -94,6 +95,10 @@ public static class TasMain
     /// <returns>当前任务</returns>
     static async Task ProcessCheckSearch(CancellationToken token)
     {
+#if ONLY_AUXILIARY_MODE
+        return;
+#endif  // ONLY_AUXILIARY_MODE
+
         while (!token.IsCancellationRequested)
             // 检查是否滑步取物是否完成
             if (GetCurrentDialogueLineId() > 0)
@@ -109,6 +114,10 @@ public static class TasMain
     /// <returns>当前任务</returns>
     public static async Task UseInventoryItem(TasItems itemId, CancellationToken token)
     {
+#if ONLY_AUXILIARY_MODE
+        return;
+#endif  // ONLY_AUXILIARY_MODE
+
         // 检查是否需要使用道具
         if (itemId != TasItems.NULL)
         {
@@ -159,11 +168,14 @@ public static class TasMain
                 await TasScript.RunBattle(token);
             else if (TasScript.BattleIsRunning)
             {
+                // 设置随机结果为 1
+                SetRandomResult(1);
+
                 // 标记战斗彻底结束
                 TasScript.SetBattleStatus(false);
 
-                // 战斗结束，跳过结算界面
-                while (TasMemory.ReadUInt16(0x0019FBCC) != 0xFFFF)
+                // 战斗结束，跳过结算界面（结算界面消失时，触发当前战斗的脚本地址会变成 0xFFFF）
+                while (TriggerBattleScriptAddress == TasScript.TriggerBattleScriptAddressBackup)
                 {
                     PressKey(VK.VK_RETURN);
                     await Delay(10, token);
@@ -174,40 +186,106 @@ public static class TasMain
                     ReleaseKey(VK.VK_SPACE);
                 }
             }
-            //else if (!TeamWalkPlanEnd)
-            //{
-            //    // 自动行走
-            //    var walkPath = CurrentWalkPlan[CurrentWalkStep];
+#if !ONLY_AUXILIARY_MODE
+            else if (!TeamWalkPlanEnd)
+            {
+                // 自动行走
+                var walkPath = CurrentWalkPlan[CurrentWalkStep];
 
-            //    if ((walkPath.SceneId == -1) || (GetCurrentSceneId() == walkPath.SceneId))
-            //    {
-            //        NeedPreInput = CurrentWalkPlan[CurrentWalkStep].NeedPreInput;
-            //        if (TeamWalkTo(walkPath.Pos))
-            //        {
-            //            if (walkPath.Direction != TasDirection.Current)
-            //                // 领队应该改变面朝方向
-            //                TeamWalkOneStep(walkPath.Direction);
+                if ((walkPath.SceneId == -1) || (GetCurrentSceneId() == walkPath.SceneId))
+                {
+                BeginWalk:
+                    NeedPreInput = (CurrentWalkPlan[CurrentWalkStep].PreInputTimes > 0);
+                    if (TeamWalkTo(walkPath.Pos))
+                    {
+                        if (walkPath.Direction != TasDirection.Current)
+                            // 领队应该改变面朝方向
+                            TeamWalkOneStep(walkPath.Direction);
 
-            //            // 检查是否需要滑步取物
-            //            while (NeedPreInput) await Task.Yield();
+                        // 检查是否需要滑步取物
+                        while (NeedPreInput) await Task.Yield();
 
-            //            // 检查是否需要使用道具
-            //            await UseInventoryItem(CurrentWalkPlan[CurrentWalkStep].NeedUseItemId, token);
+                        // 检查是否需要多次滑步取物
+                        if (--CurrentWalkPlan[CurrentWalkStep].PreInputTimes > 0)
+                        {
+                            // 等待本次完成
+                            while (GetCurrentDialogueLineId() > 0) await Task.Yield();
 
-            //            // 先停下
-            //            TeamStopWalk();
+                            // 进行下一次滑步取物
+                            goto BeginWalk;
+                        }
 
-            //            // 设置下一个坐标
-            //            CurrentWalkStep++;
-            //        }
+                        // 检查是否需要使用道具
+                        await UseInventoryItem(CurrentWalkPlan[CurrentWalkStep].NeedUseItemId, token);
 
-            //        // 检查行进路径是否结束
-            //        TeamWalkPlanEnd = (CurrentWalkStep >= CurrentWalkPlan.Length);
-            //    }
-            //}
-            //else
-            //    // 执行一帧场景脚本
-            //    await TasScript.Run(token);
+                        // 先停下
+                        TeamStopWalk();
+
+                        // 设置下一个坐标
+                        CurrentWalkStep++;
+                    }
+
+                    // 检查行进路径是否结束
+                    TeamWalkPlanEnd = (CurrentWalkStep >= CurrentWalkPlan.Length);
+                }
+            }
+            else
+                // 执行一帧场景脚本
+                await TasScript.Run(token);
+#endif  // ONLY_AUXILIARY_MODE
+        }
+    }
+
+    /// <summary>
+    /// 异步随机数结果分配循环
+    /// </summary>
+    /// <param name="token">任务令牌</param>
+    /// <returns>当前任务</returns>
+    static async Task ProcessTasRandomResult(CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            // 检查回合中哪一方在行动，据此分配想要的随机结果
+            if (IsInBattle && (CurrentActorId != TasBattleFighter.NULL) && (CurrentActorSelectorId != TasBattleFighter.First))
+            {
+                // 检查该哪一方行动，我方永远最幸运，敌方永远最倒霉
+                if (CurrentActorTeam == TasBattleTeam.我方)
+                {
+                    var currentActorId = (int)CurrentActorId;
+                    var memberRoundAction = GetMemberRoundAction(currentActorId);
+
+                    switch (memberRoundAction.MemberAction)
+                    {
+                        case TasMemberActions.普攻:
+                            var heroId = GetMemberTrailRelativeToViewport(currentActorId).HeroId;
+                            SetRandomResult((heroId == TasHero.李逍遥) ? .3333333135f : 1);
+                            //SetRandomResult(1);
+                            break;
+
+                        case TasMemberActions.防御:
+                            SetRandomResult(.6500000358f);
+                            break;
+
+                        case TasMemberActions.逃跑:
+                            SetRandomResult(0);
+                            break;
+
+                        case TasMemberActions.进攻仙术:
+                            if (memberRoundAction.EntityId.MagicId == TasMagics.飞龙探云手)
+                                SetRandomResult(0);
+                            else
+                                SetRandomResult(1);
+                            break;
+
+                        default:
+                            SetRandomResult(1);
+                            break;
+                    }
+                }
+                else AutoRandomNext();      // 托管敌人的随机
+
+                await Delay(1, token);
+            }
         }
     }
 
@@ -239,10 +317,10 @@ public static class TasMain
                 // 初始化自动化战斗模块
                 TasScript.InitBattle();
 
-                TasScript.Progress = TasScript.TasProgress.赤鬼王测试;
+                //TasScript.Progress = TasScript.TasProgress.赤鬼王测试;
 #if DEBUG
-                //TasScript.Progress = TasScript.TasProgress.见石碑篇_初登岛_过草妖;
-                //TasScript.SubStageId = 1;
+                TasScript.Progress = TasScript.TasProgress.学功夫篇_离岛;
+                //TasScript.SubStageId = 0;
 #endif // DEBUG
 
                 // 布置后台任务
@@ -253,6 +331,7 @@ public static class TasMain
                 Task processTasMainLoop = Task.Run(() => ProcessTasMainLoop(token));
                 Task processSkipDialogue = Task.Run(() => ProcessSkipDialogue(token));
                 Task processCheckSearch = Task.Run(() => ProcessCheckSearch(token));
+                Task processTasRandomResult = Task.Run(() => ProcessTasRandomResult(token));
                 //Task initGlobalSceneEvent = Task.Run(() => TasScript.InitGlobalSceneEventAsync(token));
 
                 // 等待所有任务完成清理（超时可选）

@@ -53,10 +53,8 @@ public static class TasGlobal
     {
         await Task.Delay(milliseconds, token);
 
-        //Sleep(1);
-        //milliseconds *= 100000;
-        //for (var i = 0; i < milliseconds && !token.IsCancellationRequested; i++) ;
-        //Thread.SpinWait(1);
+        // 非战斗时自动更新全局随机
+        if (!IsInBattle) AutoRandomNext();
     }
 
     /// <summary>

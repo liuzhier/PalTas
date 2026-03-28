@@ -3,6 +3,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,6 +24,9 @@ public static class TasWindow
     /// </summary>
     public static void Init()
     {
+        // 初始化 log
+        File.Create(S.LogPath);
+
         // 打开游戏
         OpenGame();
 

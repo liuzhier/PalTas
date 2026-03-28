@@ -1,8 +1,7 @@
-using PalTas.TasCore.Records;
 using System.Threading;
 using System.Threading.Tasks;
 using static PalTas.TasCore.TasScript.SceneEvent;
-using static Vanara.PInvoke.User32;
+using static PalTas.TasCore.TasScript.TasProgress;
 
 namespace PalTas.TasCore;
 
@@ -25,45 +24,42 @@ public static partial class TasScript
     {
         switch (Progress)
         {
-            case TasProgress.见石碑篇_出房间:
-                {
-                    if (GetCurrentSceneId() == 2)
-                    {
-                        SetWalkPlanning(TasWalkPlans[Progress][0]);
-                        Progress = TasProgress.见石碑篇_接客;
-                    }
-                }
-                break;
-
-            case TasProgress.见石碑篇_接客:
+            case 见石碑篇_出房间:
                 {
                     SetWalkPlanning(TasWalkPlans[Progress][0]);
-                    Progress = TasProgress.见石碑篇_下楼直走还魂香;
+                    Progress = 见石碑篇_接客;
                 }
                 break;
 
-            case TasProgress.见石碑篇_下楼直走还魂香:
+            case 见石碑篇_接客:
                 {
                     SetWalkPlanning(TasWalkPlans[Progress][0]);
-                    Progress = TasProgress.见石碑篇_大娘吩咐赶乞丐;
+                    Progress = 见石碑篇_下楼直走还魂香;
                 }
                 break;
 
-            case TasProgress.见石碑篇_大娘吩咐赶乞丐:
+            case 见石碑篇_下楼直走还魂香:
                 {
                     SetWalkPlanning(TasWalkPlans[Progress][0]);
-                    Progress = TasProgress.见石碑篇_赶乞丐;
+                    Progress = 见石碑篇_大娘吩咐赶乞丐;
                 }
                 break;
 
-            case TasProgress.见石碑篇_赶乞丐:
+            case 见石碑篇_大娘吩咐赶乞丐:
                 {
                     SetWalkPlanning(TasWalkPlans[Progress][0]);
-                    Progress = TasProgress.见石碑篇_去厨房帮大娘打下手;
+                    Progress = 见石碑篇_赶乞丐;
                 }
                 break;
 
-            case TasProgress.见石碑篇_去厨房帮大娘打下手:
+            case 见石碑篇_赶乞丐:
+                {
+                    SetWalkPlanning(TasWalkPlans[Progress][0]);
+                    Progress = 见石碑篇_去厨房帮大娘打下手;
+                }
+                break;
+
+            case 见石碑篇_去厨房帮大娘打下手:
                 {
                     if (SubStageId == 0)
                     {
@@ -83,13 +79,13 @@ public static partial class TasScript
                     else if (SubStageId == 2)
                     {
                         // 对话完毕后才能拿酒菜
-                        Progress = TasProgress.见石碑篇_端酒菜;
+                        Progress = 见石碑篇_端酒菜;
                         SubStageId = 0;
                     }
                 }
                 break;
 
-            case TasProgress.见石碑篇_端酒菜:
+            case 见石碑篇_端酒菜:
                 {
                     if (SubStageId == 0)
                     {
@@ -99,36 +95,36 @@ public static partial class TasScript
                     else if (SubStageId == 1)
                     {
                         SetWalkPlanning(TasWalkPlans[Progress][1]);
-                        Progress = TasProgress.见石碑篇_送餐;
+                        Progress = 见石碑篇_送餐;
                         SubStageId = 0;
                     }
                 }
                 break;
 
-            case TasProgress.见石碑篇_送餐:
+            case 见石碑篇_送餐:
                 {
                     SetWalkPlanning(TasWalkPlans[Progress][0]);
-                    Progress = TasProgress.见石碑篇_拿十里香;
+                    Progress = 见石碑篇_拿十里香;
                 }
                 break;
 
-            case TasProgress.见石碑篇_拿十里香:
+            case 见石碑篇_拿十里香:
                 {
                     SetWalkPlanning(TasWalkPlans[Progress][0]);
 
-                    Progress = TasProgress.见石碑篇_将桂花酒交于酒剑仙;
+                    Progress = 见石碑篇_将桂花酒交于酒剑仙;
                 }
                 break;
 
-            case TasProgress.见石碑篇_将桂花酒交于酒剑仙:
+            case 见石碑篇_将桂花酒交于酒剑仙:
                 {
                     SetWalkPlanning(TasWalkPlans[Progress][0]);
-                    Progress = TasProgress.见石碑篇_不予理会直接出客栈;
+                    Progress = 见石碑篇_不予理会直接出客栈;
                     SubStageId = 0;
                 }
                 break;
 
-            case TasProgress.见石碑篇_不予理会直接出客栈:
+            case 见石碑篇_不予理会直接出客栈:
                 {
                     if (SubStageId == 0)
                     {
@@ -139,13 +135,13 @@ public static partial class TasScript
                     {
                         SetWalkPlanning(TasWalkPlans[Progress][1]);
 
-                        Progress = TasProgress.见石碑篇_大娘病倒了回客栈探望王小虎;
+                        Progress = 见石碑篇_大娘病倒了回客栈探望王小虎;
                         SubStageId = 0;
                     }
                 }
                 break;
 
-            case TasProgress.见石碑篇_大娘病倒了回客栈探望王小虎:
+            case 见石碑篇_大娘病倒了回客栈探望王小虎:
                 {
                     if (SubStageId == 0)
                     {
@@ -155,13 +151,13 @@ public static partial class TasScript
                     else if (SubStageId == 1)
                     {
                         SetWalkPlanning(TasWalkPlans[Progress][1]);
-                        Progress = TasProgress.见石碑篇_张四哥救人如救驾;
+                        Progress = 见石碑篇_张四哥救人如救驾;
                         SubStageId = 0;
                     }
                 }
                 break;
 
-            case TasProgress.见石碑篇_张四哥救人如救驾:
+            case 见石碑篇_张四哥救人如救驾:
                 {
                     if (SubStageId == 0)
                     {
@@ -171,13 +167,13 @@ public static partial class TasScript
                     else if (SubStageId == 1)
                     {
                         SetWalkPlanning(TasWalkPlans[Progress][1]);
-                        Progress = TasProgress.见石碑篇_初登岛_过草妖;
+                        Progress = 见石碑篇_初登岛_过草妖;
                         SubStageId = 0;
                     }
                 }
                 break;
 
-            case TasProgress.见石碑篇_初登岛_过草妖:
+            case 见石碑篇_初登岛_过草妖:
                 {
                     if (SubStageId == 0)
                     {
@@ -186,13 +182,13 @@ public static partial class TasScript
                     }
                     else if (SubStageId == 1)
                     {
-                        Progress = TasProgress.见石碑篇_初登岛_过迷阵;
+                        Progress = 见石碑篇_初登岛_过迷阵;
                         SubStageId = 0;
                     }
                 }
                 break;
 
-            case TasProgress.见石碑篇_初登岛_过迷阵:
+            case 见石碑篇_初登岛_过迷阵:
                 {
                     if (SubStageId == 0)
                     {
@@ -227,7 +223,44 @@ public static partial class TasScript
                     else if (SubStageId == 6)
                     {
                         SetWalkPlanning(TasWalkPlans[Progress][6]);
-                        SubStageId = 7;
+                        Progress = 学功夫篇_初登岛_结婚;
+                        SubStageId = 0;
+                    }
+                }
+                break;
+
+            case 学功夫篇_初登岛_结婚:
+                {
+                    if (SubStageId == 0)
+                    {
+                        SetWalkPlanning(TasWalkPlans[Progress][0]);
+                        SubStageId = 1;
+                    }
+                    else if (SubStageId == 1)
+                    {
+                        SetWalkPlanning(TasWalkPlans[Progress][1]);
+                        SubStageId = 2;
+                    }
+                    else if (SubStageId == 2)
+                    {
+                        SetWalkPlanning(TasWalkPlans[Progress][2]);
+                        Progress = 学功夫篇_离岛;
+                        SubStageId = 0;
+                    }
+                }
+                break;
+
+            case 学功夫篇_离岛:
+                {
+                    if (SubStageId == 0)
+                    {
+                        SetWalkPlanning(TasWalkPlans[Progress][0]);
+                        SubStageId = 1;
+                    }
+                    else if (SubStageId == 1)
+                    {
+                        SetWalkPlanning(TasWalkPlans[Progress][1]);
+                        SubStageId = 2;
                     }
                 }
                 break;

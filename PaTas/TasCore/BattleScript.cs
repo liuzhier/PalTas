@@ -23,6 +23,11 @@ public static partial class TasScript
     public static int BattleScriptRound { get; set; }
 
     /// <summary>
+    /// 进入战斗的脚本地址
+    /// </summary>
+    public static int TriggerBattleScriptAddressBackup { get; set; }
+
+    /// <summary>
     /// 当前回合数自定义快捷键动作
     /// </summary>
     public static RShortcutKeyRoundAction ShortcutKeyRoundAction { get; set; } = null!;
@@ -58,12 +63,17 @@ public static partial class TasScript
             0x0000, 0x0000, 0x0000, 0x0000,     // ===========================================
         ]);
 
-        // 赤鬼王测试
-        var addr = (uint)TasEnemys.赤鬼王 * 0x000E;
-        TasMemory.WriteUInt16(TasMemory.EntityDataAddr, 0xA60D, addr + sizeof(ushort) * 2);
-        // 只会普攻
-        SetScriptEntry(0xA60E, [
-            0x0000, 0x0000, 0x0000, 0x0000,     // ===========================================
+        //// 赤鬼王测试
+        //var addr = (uint)TasEnemys.赤鬼王 * 0x000E;
+        //TasMemory.WriteUInt16(TasMemory.ReadUInt32(TasMemory.EntityDataAddr), 0xA60D, addr + sizeof(ushort) * 2);
+        //// 只会普攻
+        //SetScriptEntry(0xA60E, [
+        //    0x0000, 0x0000, 0x0000, 0x0000,     // ===========================================
+        //]);
+
+        // 让灵儿不再挡道
+        SetScriptEntry(0x15A9, [
+            0x0049, 0x00DE, 0x0001, 0x0000,     // 设置对象状态   赵灵儿  漂浮
         ]);
     }
 
@@ -78,12 +88,29 @@ public static partial class TasScript
         NextRound();                        // 更新回合状态
 
         if (isBeginning)
+        {
             // 给所有人加上 32767 回合天罡、醉仙
             for (var i = 0; i < MAX_MEMBER_IN_TEAM_COUNT; i++)
             {
                 SetMemberSpecialStatus(i, TasSpecialStatus.力拔山河, 0x7FFF);
-                SetMemberSpecialStatus(i, TasSpecialStatus.动若脱兔, 0x7FFF);
+                //SetMemberSpecialStatus(i, TasSpecialStatus.坚如磐石, 0x7FFF);
+                //SetMemberSpecialStatus(i, TasSpecialStatus.身轻如燕, 0x7FFF);
+                //SetMemberSpecialStatus(i, TasSpecialStatus.动若脱兔, 0x7FFF);
             }
+
+            // 等待完全进入战斗
+            do
+            {
+                // 备份进入战斗的脚本地址
+                TriggerBattleScriptAddressBackup = TriggerBattleScriptAddress;
+            } while (TriggerBattleScriptAddress == 0xFFFF);
+
+            // 将我方先手概率提到最高，战前预算超常发挥时的实际身法，并加上真实的身法值以达到必定超常发挥的效果
+            var 李逍遥额外身法 = (short)float.Ceiling(GetHeroActualAttribute(TasHero.李逍遥, TasHeroAttribute.身法) * 2f / 9);
+            var 赵灵儿额外身法 = (short)float.Ceiling(GetHeroActualAttribute(TasHero.赵灵儿, TasHeroAttribute.身法) * 2f / 9);
+            SetHeroTempAttribute(TasHero.李逍遥, TasHeroExtraAttribute.身法, 李逍遥额外身法);
+            SetHeroTempAttribute(TasHero.赵灵儿, TasHeroExtraAttribute.身法, 赵灵儿额外身法);
+        }
     }
 
     /// <summary>
@@ -91,10 +118,10 @@ public static partial class TasScript
     /// </summary>
     public static void NextRound()
     {
-        ShortcutKeyRoundAction = null!;                                 // 重制快捷键状态
-        BattleScriptRound = (IsInBattle) ? ++BattleScriptRound : 0;     // 更新回合数统计
-        SetCurrentActorSelectorId(TasBattleFighter.NULL);               // 设置当前不该选择动作
-        SetCurrentActorId(TasBattleFighter.NULL);                       // 设置当前没有人正在行动
+        ShortcutKeyRoundAction = null!;                                     // 重制快捷键状态
+        BattleScriptRound = (IsInBattle) ? ++BattleScriptRound : -1;        // 更新回合数统计
+        SetCurrentActorSelectorId(TasBattleFighter.Last);                   // 设置当前不该选择动作
+        SetCurrentActorId(TasBattleFighter.NULL);                           // 设置当前没有人正在行动
     }
 
     /// <summary>
@@ -109,18 +136,18 @@ public static partial class TasScript
             // 战斗刚刚启动
             // 初始化回合状态
             SetBattleStatus(true);
-            BattleScriptRound = 0;
 
             // 等待允许选择动作
-            while ((CurrentActorSelectorId == TasBattleFighter.NULL) && IsInBattle) await Delay(1, token);
+            goto AwaitActionSelection;
         }
 
-        // 自动选择角色本回合需要执行的动作
+        return;
+
+        // 自动选择队员本回合需要执行的动作
         BattleAutoSelectAction();
 
         // 将我方标记为动作选择完毕
-        var currentActorSelectorId = ShortcutKeyRoundAction?.FighterId ?? TasBattleFighter.Last;
-        SetCurrentActorSelectorId(currentActorSelectorId);
+        SetCurrentActorSelectorId(TasBattleFighter.Last);
 
         // 让我方行动起来
         var key = (VK)(ShortcutKeyRoundAction?.Key ?? TasActionShortcutKeys.NULL);
@@ -137,6 +164,9 @@ public static partial class TasScript
                 PressKey(VK.VK_LMENU);
                 await Delay(30, token);
                 ReleaseKey(VK.VK_LMENU);
+
+                // 解决回合行动阶段，队员头上出现光标的问题
+                SetCurrentActorSelectorId(TasBattleFighter.Last);
             }
             else
             {
@@ -149,42 +179,24 @@ public static partial class TasScript
             await Delay(1, token);
         }
 
-        // 检查回合中哪一方在行动
-        while ((CurrentActorSelectorId != TasBattleFighter.First) && IsInBattle)
-        {
-            // 检查该哪一方行动，我方永远最幸运，敌方永远最倒霉
-            if (CurrentActorTeam == TasBattleTeam.我方)
-            {
-                var memberRoundAction = GetMemberRoundAction((int)CurrentActorId);
+    AwaitActionSelection:
+        // 保证我方总是先手
+        SetRandomResult(0);
 
-                switch (memberRoundAction.MemberAction)
-                {
-                    case TasMemberActions.普攻:
-                        // 这样设置仍然是错误的，应该检查 Hero 编号，而不是 Member 编号
-                        // 今天太累惹．．．．．．明天在改叭．．．．．．
-                        SetRandomResult((CurrentActorId == TasBattleFighter.First) ? .3333333135f : 1);
-                        break;
+        // 等待允许选择动作
+        //while ((CurrentActorSelectorId != TasBattleFighter.First) && IsInBattle)
+        //{
+        //    // 跳过随时可能出现的条幅框
+        //    PressKey(VK.VK_RETURN);
+        //    await Delay(1, token);
+        //    ReleaseKey(VK.VK_RETURN);
 
-                    case TasMemberActions.防御:
-                        SetRandomResult(.6500000358f);
-                        break;
+        //    PressKey(VK.VK_SPACE);
+        //    await Delay(1, token);
+        //    ReleaseKey(VK.VK_SPACE);
 
-                    case TasMemberActions.进攻仙术:
-                        if (memberRoundAction.EntityId.MagicId == TasMagics.飞龙探云手)
-                            SetRandomResult(0);
-                        else
-                            SetRandomResult(1);
-                        break;
-
-                    default:
-                        SetRandomResult(1);
-                        break;
-                }
-            }
-            else AutoRandomNext();      // 托管敌人的随机
-
-            //await Delay(1, token);
-        }
+        //    await Delay(1, token);
+        //}
 
         // 回合结束，更新回合状态
         NextRound();
@@ -200,42 +212,11 @@ public static partial class TasScript
         {
             case TasProgress.见石碑篇_初登岛_过草妖:
                 {
-                    BattleScriptRound = 0;
-                    if (BattleScriptRound == 0)
+                    // A
+                    SetMemberRoundAction(0, new()
                     {
-                        // 直接砍
-                        SetMemberRoundAction(0, new()
-                        {
-                            TargetOfAttack = TasTargetOfAttack._0,
-                            MemberAction = TasMemberActions.普攻,
-                        });
-                    }
-                    else if (BattleScriptRound == 1)
-                    {
-                        // 梦蛇
-                        SetMemberRoundAction(0, new()
-                        {
-                            TargetOfAttack = TasTargetOfAttack._0,
-                            MemberAction = TasMemberActions.防守仙术,
-                            EntityId = new()
-                            {
-                                MagicId = TasMagics.梦蛇,
-                            },
-                        });
-                    }
-                    else
-                    {
-                        // 御剑伏魔1
-                        SetMemberRoundAction(0, new()
-                        {
-                            TargetOfAttack = TasTargetOfAttack._0,
-                            MemberAction = TasMemberActions.进攻仙术,
-                            EntityId = new()
-                            {
-                                MagicId = TasMagics.御剑伏魔,
-                            },
-                        });
-                    }
+                        MemberAction = TasMemberActions.逃跑,
+                    });
                 }
                 break;
 

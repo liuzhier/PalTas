@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading;
 
 namespace PalTas.SimpleUtility;
@@ -9,6 +10,8 @@ namespace PalTas.SimpleUtility;
 /// </summary>
 public static class S
 {
+    public const string LogPath = @".\Log.txt";
+
     /// <summary>
     /// 进程暂停，接受用户输入文本
     /// </summary>
@@ -18,7 +21,11 @@ public static class S
     /// 输出调试信息到控制台
     /// </summary>
     /// <param name="text">欲输出的内容</param>
-    public static void Log(string? text = null) => Console.WriteLine(text ?? string.Empty);
+    public static void Log(string? text = null)
+    {
+        //File.AppendAllText(LogPath, text);
+        Console.WriteLine(text ?? string.Empty);
+    }
 
     /// <summary>
     /// 延迟一段时间，避免 CPU 使用率过高

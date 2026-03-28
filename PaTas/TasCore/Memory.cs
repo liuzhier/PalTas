@@ -13,6 +13,7 @@ public static unsafe class TasMemory
     public const uint
         PAL_EXE                                 = 0x0002_8000,                  // PAL.EXE
         PAL_EXE_BASE                            = PAL_EXE + 0x0040_0000,        // 数据基地址
+        GLOBAL_DATA                             = 0x0000_003C,                  // 全局数据基地址
         EVENT                                   = 0x0000_0144,                  // 连续结构：事件
         DIALOGUE_OUTPUT_DELAY                   = 0x0000_0232,                  // 对话逐字输出延迟
         CURRENT_DIALOGUE_LINE_ID                = 0x0000_0234,                  // 当前对话行数
@@ -32,12 +33,13 @@ public static unsafe class TasMemory
         MEMBER_ROUND_ACTION                     = 0x0000_05A8,                  // 【战斗】连续结构：队员本回合的行动动作
         ENEMY_BATTLE_TEMP_DATA                  = 0x0000_05C0,                  // 【战斗】连续结构：战斗中敌方的战斗临时数据
         MEMBER_SPECIAL_STATUS                   = 0x0000_06D0,                  // 【战斗】连续结构：队员的增益/恶性状态
-        MEMBER_POISON_STATUS                    = 0x0000_0710,                  // 【战斗】连续结构：队员的增益/恶性状态（需解引用）
+        MEMBER_POISON_STATUS                    = 0x0000_0710,                  // 【战斗】连续结构：队员的增益/恶性状态
         ENTITY                                  = 0x0000_0750,                  // 连续结构：实体对象（需解引用）
         INVENTORY                               = 0x0000_0768,                  // 连续结构：道具列表
+        HERO_BASE_DATA                          = 0x0000_07A8,                  // 【战斗】我方基础数据
         CURRENT_SCENE_EVENT                     = 0x0000_07E8,                  // 连续结构：当前场景事件
+        TRIGGER_BATTLE_SCRIPT_ADDRESS           = 0x0019_FBCC,                  // 触发当前战斗的脚本地址
         CURRENT_ENEMY_TEAM_ID                   = PAL_EXE + 0x0017_7BC8,        // 【战斗】当前敌方队伍编号
-        IS_IN_BATTLE                            = 0x0007_1E50,                  // PAL.DLL v1.02 是否在战斗之中
         RANDOM_RESULT                           = 0x0007_1FCC;                  // PAL.DLL v1.02 随机数结果（原意义为种子）
 
     /// <summary>
@@ -59,8 +61,10 @@ public static unsafe class TasMemory
             return addr;
         }
     }
-    public static uint EntityDataAddr => ReadUInt32(PalBaseAddr + ENTITY);
-    public static uint ScriptEntryAddr => ReadUInt32(ReadUInt32(PalBaseAddr + 0x0000_003C) - 0x0000_0B88);
+    public static uint GlobalDataAddr => PalBaseAddr + GLOBAL_DATA;
+    public static uint HeroExtraAttributeAddr => ReadUInt32(GlobalDataAddr) - 0x0000_051C;
+    public static uint ScriptEntryAddr => ReadUInt32(GlobalDataAddr) - 0x0000_0B88;
+    public static uint EntityDataAddr => PalBaseAddr + ENTITY;
     public static uint EventAddr => PalBaseAddr + EVENT;
     public static uint CurrentSceneEventAddr => PalBaseAddr + CURRENT_SCENE_EVENT;
     public static uint EventMaxIdAddr => PalBaseAddr + CURRENT_SCENE_MAX_EVENT_ID;
@@ -82,9 +86,10 @@ public static unsafe class TasMemory
     public static uint MemberPoisonStatusAddr => PalBaseAddr + MEMBER_POISON_STATUS;
     public static uint InventoryAddr => PalBaseAddr + INVENTORY;
     public static uint MemberTrailAddr => PalBaseAddr + MEMBER_TRAIL;
+    public static uint HeroBaseDataAddr => PalBaseAddr + HERO_BASE_DATA;
+    public static uint TriggerBattleScriptAddressAddr => TRIGGER_BATTLE_SCRIPT_ADDRESS;
     public static uint CurrentEnemyTeamIdAddr => CURRENT_ENEMY_TEAM_ID;
     public static uint PalDllAddr => (uint)GetPalModuleBase();
-    public static uint IsInBattleAddr => PalDllAddr + IS_IN_BATTLE;
     public static uint RandomResultAddr => PalDllAddr + RANDOM_RESULT;
 
     /// <summary>

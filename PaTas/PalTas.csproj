@@ -2,6 +2,7 @@
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <Platforms>AnyCPU</Platforms>
+        <DefineConstants>$(DefineConstants);ONLY_AUXILIARY_MODE</DefineConstants>
     </PropertyGroup>
 
     <ItemGroup>

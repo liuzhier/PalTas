@@ -11,7 +11,6 @@ public static unsafe class Base
         MaxHeroesInTeam     = 5,
         MagicElementalNum   = 5,
         MaxHeroMagic        = 32,
-        MaxHeroEquipments   = 6,
         MaxScenes           = 300,
         MaxEffectiveScenes  = MaxScenes - 1,
         MaxLevel            = 99;

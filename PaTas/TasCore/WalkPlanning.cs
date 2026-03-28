@@ -1,6 +1,6 @@
 using PalTas.TasCore.Records;
 using System.Collections.Generic;
-using static Vanara.PInvoke.Gdi32;
+using static PalTas.TasCore.TasScript.TasProgress;
 
 namespace PalTas.TasCore;
 
@@ -11,13 +11,19 @@ public static partial class TasScript
     /// </summary>
     public static Dictionary<TasProgress, TasWalkPath[][]> TasWalkPlans { get; private set; } = new()
     {
-        [TasProgress.见石碑篇_出房间] = [
+        [见石碑篇_出房间] = [
             [
-                // ↓出房间
-                new(1168, 376),
+                // ↓
+                new(1200, 360, SceneId: 2),
+                // →拿皮帽
+                new(1248, 384, PreInputTimes: 1),
+                // ←
+                new(1216, 368),
+                // ↓
+                new(1184, 384),
             ],
         ],
-        [TasProgress.见石碑篇_接客] = [
+        [见石碑篇_接客] = [
             [
                 // ←前往隔壁门口
                 // ↓切身位，避开 NPC 们
@@ -28,7 +34,7 @@ public static partial class TasScript
                 new(1152, 1360),
             ],
         ],
-        [TasProgress.见石碑篇_下楼直走还魂香] = [
+        [见石碑篇_下楼直走还魂香] = [
             [
                 // →下楼
                 new(1168, 1368),
@@ -37,10 +43,10 @@ public static partial class TasScript
                 // →前往右边尽头的箱子附近
                 //new(1488, 1576),
                 // →前往右边尽头的箱子（滑步取物）
-                new(1552, 1608, NeedPreInput: true),
+                new(1552, 1608, PreInputTimes: 1),
             ],
         ],
-        [TasProgress.见石碑篇_大娘吩咐赶乞丐] = [
+        [见石碑篇_大娘吩咐赶乞丐] = [
             [
                 // ↓
                 new(1536, 1616),
@@ -55,13 +61,13 @@ public static partial class TasScript
                 new(1104, 1640),
             ],
         ],
-        [TasProgress.见石碑篇_赶乞丐] = [
+        [见石碑篇_赶乞丐] = [
             [
                 // ↓蹴尔而与之，乞人不屑也
-                new(1040, 1672, NeedPreInput: true),
+                new(1040, 1672, PreInputTimes: 1),
             ],
         ],
-        [TasProgress.见石碑篇_去厨房帮大娘打下手] = [
+        [见石碑篇_去厨房帮大娘打下手] = [
             [
                 // ↑门前等待法
                 new(1168, 1592),
@@ -76,15 +82,15 @@ public static partial class TasScript
                 // ←前往灶间门口
                 new(496, 1192, SceneId: 2),
                 // ↑找李大娘对话
-                new(656, 1112, NeedPreInput: true),
+                new(656, 1112, PreInputTimes: 1),
             ],
         ],
-        [TasProgress.见石碑篇_端酒菜] = [
+        [见石碑篇_端酒菜] = [
             [
                 // ↓
                 new(640, 1120),
                 // →端酒菜
-                new(656, 1128, NeedPreInput: true),
+                new(656, 1128, PreInputTimes: 1),
             ],
             [
                 // ↓
@@ -93,7 +99,7 @@ public static partial class TasScript
                 new(688, 1272),
             ],
         ],
-        [TasProgress.见石碑篇_送餐] = [
+        [见石碑篇_送餐] = [
             [
                 // →
                 new(1120, 1536),
@@ -109,17 +115,17 @@ public static partial class TasScript
                 new(1440, 1408),
             ],
         ],
-        [TasProgress.见石碑篇_拿十里香] = [
+        [见石碑篇_拿十里香] = [
             [
                 // ↑
                 new(1376, 1040, SceneId: 2),
                 // ↑
                 new(1424, 1016),
                 // →
-                new(1456, 1032, NeedPreInput: true),
+                new(1456, 1032, PreInputTimes: 1),
             ],
         ],
-        [TasProgress.见石碑篇_将桂花酒交于酒剑仙] = [
+        [见石碑篇_将桂花酒交于酒剑仙] = [
             [
                 // ←
                 new(1424, 1016),
@@ -139,7 +145,7 @@ public static partial class TasScript
                 new(1040, 1656, NeedUseItemId: TasItems.桂花酒),
             ],
         ],
-        [TasProgress.见石碑篇_不予理会直接出客栈] = [
+        [见石碑篇_不予理会直接出客栈] = [
             [
                 // ↓出客栈
                 new(992, 1680),
@@ -169,7 +175,7 @@ public static partial class TasScript
                 new(272, 1672),
             ],
         ],
-        [TasProgress.见石碑篇_大娘病倒了回客栈探望王小虎] = [
+        [见石碑篇_大娘病倒了回客栈探望王小虎] = [
             [
                 // ↓村花：李大娘小睡片刻
                 new(1584, 1448, SceneId: 5),
@@ -190,15 +196,15 @@ public static partial class TasScript
                 // ↑
                 new(1264, 744, SceneId: 3),
                 // ←拿还神丹
-                new(1200, 712, NeedPreInput: true),
+                new(1200, 712, PreInputTimes: 1),
                 // ↑拿驱魔香
-                new(1344, 640, NeedPreInput: true, Direction: TasDirection.Left),
+                new(1344, 640, PreInputTimes: 1, Direction: TasDirection.Left),
                 // ↑拿忘魂花
-                new(1440, 688, NeedPreInput: true),
+                new(1440, 688, PreInputTimes: 1),
                 // ↓洪大夫爱莫能助
                 new(1408, 704),
                 // →感谢王小虎
-                new(1424, 712, NeedPreInput: true),
+                new(1424, 712, PreInputTimes: 1),
             ],
             [
                 // ←
@@ -221,7 +227,7 @@ public static partial class TasScript
                 new(992, 1680),
             ],
         ],
-        [TasProgress.见石碑篇_张四哥救人如救驾] = [
+        [见石碑篇_张四哥救人如救驾] = [
             // 复用从客栈门口去集市
             null!,
             // 找张四哥借船
@@ -229,12 +235,12 @@ public static partial class TasScript
                 // ↑
                 new(976, 1288, SceneId: 6),
                 // →救人如救驾
-                new(1104, 1352, NeedPreInput: true),
+                new(1104, 1352, PreInputTimes: 1),
                 // →走吧上船
                 new(1184, 1392),
             ],
         ],
-        [TasProgress.见石碑篇_初登岛_过草妖] = [
+        [见石碑篇_初登岛_过草妖] = [
             [
                 // ↑
                 new(1456, 456, SceneId: 15),
@@ -254,7 +260,7 @@ public static partial class TasScript
                 new(1792, 944),
             ],
         ],
-        [TasProgress.见石碑篇_初登岛_过迷阵] = [
+        [见石碑篇_初登岛_过迷阵] = [
             // 0 中岛，蛇纹之姬　圣灵之身
             [
                 // ↑
@@ -355,7 +361,7 @@ public static partial class TasScript
                 // →
                 new(1312, 464),
                 // ↑拿五张灵符 30
-                new(1392, 424, NeedPreInput: true, Direction: TasDirection.Right),
+                new(1392, 424, PreInputTimes: 1, Direction: TasDirection.Right),
             ],
             // 4 北荒伏火怪
             [
@@ -441,6 +447,125 @@ public static partial class TasScript
                 new(1024, 912),
                 // ←
                 new(1856, 496),
+            ],
+        ],
+        [学功夫篇_初登岛_结婚] = [
+            // 0 看侍香龙女洗澡
+            [
+                // ↑
+                new(656, 648, SceneId: 17),
+                // →
+                new(1056, 848),
+                // ↓
+                new(896, 928),
+                // →
+                new(1056, 1008),
+                // ↓
+                new(656, 1208),
+                // →看洗澡，偷衣服
+                new(1088, 1424, PreInputTimes: 1),
+                // ←
+                new(672, 1216),
+                // →二看洗澡
+                new(1072, 1416),
+            ],
+            // 1 进水月宫
+            [
+                // ↑
+                new(1216, 1216),
+                // →
+                new(1248, 1232),
+                // ↑
+                new(1520, 1096),
+                // →
+                new(1616, 1144),
+                // ↑
+                new(1824, 1040),
+                // ↑
+                new(864, 800),
+                // ←
+                new(816, 776, SceneId: 20, PreInputTimes: 1),
+                // →
+                new(848, 792),
+                // ↑
+                new(1024, 704),
+                // ←
+                new(960, 672),
+                // ↑
+                new(1072, 616),
+            ],
+            // 2 出水月宫
+            [
+                // ↑
+                new(1104, 1224, SceneId: 21),
+                // ←
+                new(944, 1144),
+                // ↑拿金创药
+                new(1248, 992, PreInputTimes: 1),
+                // ←灵儿赠药
+                new(1168, 952),
+                // →
+                new(1248, 992),
+                // ↓
+                new(944, 1144),
+                // ←拿苗刀（需要触发三次）
+                new(896, 1120, PreInputTimes: 3),
+                // →
+                new(1088, 1216),
+                // ↓撞上姥姥，被逼婚
+                new(496, 1512),
+                // ↓出水月宫
+                new(496, 1528),
+            ],
+        ],
+        [学功夫篇_离岛] = [
+            // 0 到草妖峡谷
+            [
+                // ↓
+                new(816, 728, SceneId: 20),
+                // →
+                new(896, 768),
+                // ↓到灵池
+                new(224, 1104),
+                // ↓
+                new(1632, 1152, SceneId: 17),
+                // ←
+                new(1328, 1000),
+                // ↓
+                new(1264, 1032),
+                // ←
+                new(976, 888),
+                // ↑
+                new(1056, 848),
+                // ←
+                new(656, 648),
+                // ↓
+                new(256, 848),
+                // ↓到迷阵
+                new(976, 936, SceneId: 19),
+                // →
+                new(992, 944),
+                // ↓
+                new(880, 1000),
+                // ←
+                new(864, 992),
+                // ↓
+                new(784, 1032),
+                // →
+                new(800, 1040),
+                // ↓到草妖峡谷
+                new(528, 1176),
+            ],
+            // 1 二过草妖
+            [
+                // 
+                new(),
+                // 
+                new(),
+                // 
+                new(),
+                // 
+                new(),
             ],
         ],
     };

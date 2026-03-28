@@ -10,21 +10,159 @@ namespace PalTas.TasCore;
 public static class TasCommon
 {
     public const int
-        MAX_MEMBER_COUNT            = 5,
-        MAX_MEMBER_IN_TEAM_COUNT    = 3,
-        MAX_ENEMY_COUNT             = 5,
-        MAX_INVENTORY               = 256;
+        MAX_HERO_COUNT                  = 6,
+        MAX_MEMBER_COUNT                = MAX_HERO_COUNT - 1,
+        MAX_MEMBER_IN_TEAM_COUNT        = 3,
+        MAX_ENEMY_COUNT                 = 5,
+        MAX_INVENTORY                   = 256,
+        MAX_HERO_EQUIPMENT_COUNT        = 6,
+        MAX_HERO_BATTLE_EQUIPMENT_COUNT = MAX_HERO_EQUIPMENT_COUNT + 1;
 
     /// <summary>
     /// 方向枚举
     /// </summary>
     public enum TasDirection : short
     {
-        Current = -1,       // 当前
-        Down    = 0,        // 下
-        Left    = 1,        // 左
-        Up      = 2,        // 上
-        Right   = 3,        // 右
+        Current     = -1,       // 当前
+        Down        = 0,        // 下
+        Left        = 1,        // 左
+        Up          = 2,        // 上
+        Right       = 3,        // 右
+    }
+
+    /// <summary>
+    /// 装备部位
+    /// </summary>
+    public enum TasEquipType : ushort
+    {
+        头戴      = 0,        // 头戴
+        披挂      = 1,        // 披挂
+        身穿      = 2,        // 身穿
+        手持      = 3,        // 手持
+        脚穿      = 4,        // 脚穿
+        佩带      = 5,        // 佩带
+        临时      = 6,        // 临时
+    }
+
+    /// <summary>
+    /// 装备效果部位
+    /// </summary>
+    public enum TasEquipEffectType : ushort
+    {
+        头戴      = 0x000B,       // 头戴
+        披挂      = 0x000C,       // 披挂
+        身穿      = 0x000D,       // 身穿
+        手持      = 0x000E,       // 手持
+        脚穿      = 0x000F,       // 脚穿
+        佩带      = 0x0010,       // 佩带
+        临时      = 0x0011,       // 临时
+    }
+
+    /// <summary>
+    /// 英雄临时属性
+    /// </summary>
+    public enum TasHeroExtraAttribute : ushort
+    {
+        武术       = 0,
+        灵力       = 1,
+        防御       = 2,
+        身法       = 3,
+        吉运       = 4,
+        避毒率     = 5,
+        避风率     = 6,
+        避雷率     = 7,
+        避水率     = 8,
+        避火率     = 9,
+        避土率     = 10,
+    }
+
+    /// <summary>
+    /// 角色属性
+    /// </summary>
+    public enum TasHeroAttribute : ushort
+    {
+        肖像                     = 0,
+        战斗形象                 = 1,
+        行走形象                 = 2,
+        名称编号                 = 3,
+        普攻全体                 = 4,
+        修行                     = 6,
+        最大体力                 = 7,
+        最大真气                 = 8,
+        体力                     = 9,
+        真气                     = 10,
+        头戴                     = 11,
+        披挂                     = 12,
+        身穿                     = 13,
+        手持                     = 14,
+        脚穿                     = 15,
+        佩带                     = 16,
+        武术                     = 17,
+        灵力                     = 18,
+        防御                     = 19,
+        身法                     = 20,
+        吉运                     = 21,
+        避毒率                   = 22,
+        避风率                   = 23,
+        避雷率                   = 24,
+        避水率                   = 25,
+        避火率                   = 26,
+        避土率                   = 27,
+        濒死时援助我者编号       = 31,
+        仙术1                    = 32,
+        仙术2                    = 33,
+        仙术3                    = 34,
+        仙术4                    = 35,
+        仙术5                    = 36,
+        仙术6                    = 37,
+        仙术7                    = 38,
+        仙术8                    = 39,
+        仙术9                    = 40,
+        仙术10                   = 41,
+        仙术11                   = 42,
+        仙术12                   = 43,
+        仙术13                   = 44,
+        仙术14                   = 45,
+        仙术15                   = 46,
+        仙术16                   = 47,
+        仙术17                   = 48,
+        仙术18                   = 49,
+        仙术19                   = 50,
+        仙术20                   = 51,
+        仙术21                   = 52,
+        仙术22                   = 53,
+        仙术23                   = 54,
+        仙术24                   = 55,
+        仙术25                   = 56,
+        仙术26                   = 57,
+        仙术27                   = 58,
+        仙术28                   = 59,
+        仙术29                   = 60,
+        仙术30                   = 61,
+        仙术31                   = 62,
+        仙术32                   = 63,
+        行走形象每方向帧数       = 64,
+        合体法术                 = 65,
+        阵亡呻吟音效             = 66,
+        普攻呐喊音效             = 67,
+        武器挥砍音效             = 68,
+        暴击呐喊音效             = 69,
+        施法集气呐喊音效         = 70,
+        武器格挡音效             = 67,
+        濒死呻吟音效             = 68,
+    }
+
+    /// <summary>
+    /// 实际可用的正派角色
+    /// </summary>
+    public enum TasHero : ushort
+    {
+        李逍遥     = 0,
+        赵灵儿     = 1,
+        林月如     = 2,
+        巫后       = 3,
+        阿奴       = 4,
+        盖罗娇     = 5,
     }
 
     /// <summary>

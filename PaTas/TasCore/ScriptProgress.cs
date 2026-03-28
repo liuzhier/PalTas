@@ -6,6 +6,10 @@ public static partial class TasScript
     {
         // 无用进度
         NULL = -1,
+
+        /// <summary>
+        /// 见石碑篇
+        /// </summary>
         // 李逍遥首次出房间
         见石碑篇_出房间,
         // 去二楼楼道接客，得到 500 文
@@ -36,6 +40,14 @@ public static partial class TasScript
         见石碑篇_初登岛_过草妖,
         // 打碎所有的阿修罗石像，踩踏石板即可破阵
         见石碑篇_初登岛_过迷阵,
+
+        /// <summary>
+        /// 学功夫篇
+        /// </summary>
+        // 和灵儿结婚
+        学功夫篇_初登岛_结婚,
+        // 离开仙灵岛
+        学功夫篇_离岛,
 
 
         赤鬼王测试,
