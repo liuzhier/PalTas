@@ -521,6 +521,14 @@ public static unsafe class TasData
     }
 
     /// <summary>
+    /// 获取敌人实体巫抗
+    /// </summary>
+    /// <param name="enemyId">敌人实体编号</param>
+    /// <param name="resilience">巫抗</param>
+    public static ushort GetEnemyResilience(TasEnemys enemyId) =>
+        TasMemory.ReadUInt16(TasMemory.ReadUInt32(TasMemory.EntityDataAddr), (uint)enemyId * 0x000E + sizeof(ushort) * 1);
+
+    /// <summary>
     /// 设置敌人实体巫抗
     /// </summary>
     /// <param name="enemyId">敌人实体编号</param>

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <Platforms>AnyCPU</Platforms>
+        <Platforms>AnyCPU;x86</Platforms>
         <DefineConstants>$(DefineConstants);ONLY_AUXILIARY_MODE</DefineConstants>
     </PropertyGroup>
 

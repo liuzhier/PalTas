@@ -42,11 +42,11 @@ public static partial class TasScript
 
         // 禁用随机功能，随机结果由 TAS 程序托管
         DisableRandom(true);
-        //DisableRandom(false);               // 恢复随机功能
 
-        // 将所有敌人的巫抗设置为 0
+        // 将所有巫抗不为 10 的敌人巫抗设置为 0
         for (var i = TasEnemys.史莱姆; i <= TasEnemys.拜月教主; i++)
-            SetEnemyResilience(i, 0);
+            if (GetEnemyResilience(i) != 10)
+                SetEnemyResilience(i, 0);
 
         // 取消回梦脚本中的失误判定
         SetScriptEntry(0xA84D, [

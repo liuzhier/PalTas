@@ -24,9 +24,6 @@ public static class TasWindow
     /// </summary>
     public static void Init()
     {
-        // 初始化 log
-        File.Create(S.LogPath);
-
         // 打开游戏
         OpenGame();
 
@@ -78,8 +75,10 @@ public static class TasWindow
     public static void OpenGame()
     {
         Log("关闭相关进程...");
+#if DEBUG
         KillProcessByName("MSIAfterburner");
         KillProcessByName("RTSS");
+#endif // DEBUG
         KillProcessByName("Pal");
 
         Sleep(300);
@@ -102,12 +101,14 @@ public static class TasWindow
             UseShellExecute = true
         });
 
+#if DEBUG
         Process.Start(new ProcessStartInfo
         {
             FileName = "MSI Afterburner",
             WorkingDirectory = gameDir,
             UseShellExecute = true
         });
+#endif // DEBUG
     }
 
     /// <summary>
