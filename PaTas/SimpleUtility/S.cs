@@ -1,5 +1,5 @@
+using Avalonia.Threading;
 using System;
-using System.IO;
 using System.Threading;
 
 namespace PalTas.SimpleUtility;
@@ -31,8 +31,12 @@ public static class S
     /// 延迟一段时间，避免 CPU 使用率过高
     /// </summary>
     /// <param name="millisecondsTimeout">欲延迟的毫秒数</param>
-    public static void Sleep(int millisecondsTimeout = 1)
-    {
-        Thread.Sleep(millisecondsTimeout);
-    }
+    public static void Sleep(int millisecondsTimeout = 1) => Thread.Sleep(millisecondsTimeout);
+
+    /// <summary>
+    /// 更新 Ui
+    /// </summary>
+    /// <param name="action">要使用 Ui 线程完成的操作</param>
+    /// <param name="priority">优先级</param>
+    public static void UiUpdate(Action action, DispatcherPriority priority = default) => Dispatcher.UIThread.Post(action, priority);
 }

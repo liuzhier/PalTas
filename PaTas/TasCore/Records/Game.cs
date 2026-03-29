@@ -13,7 +13,7 @@ public static class Game
         public  short                   EnemyBaseDataId;        // 基础数据编号（在 DATA.MKF#1）
         public  RPos                    Pos;                    // 当前在战场上的坐标 XY
         public  RPos                    OriginPos;              // 初始坐标 XY（备份，行动后归位用）
-        public  short                   FrameId;                // 当前帧编号（实时渲染时用）
+        public  short                   CurrentFrameId;         // 当前帧编号（实时渲染时用）
         readonly    short               _unkown6;               // ？？？
         readonly    short               _unkown7;               // ？？？（和帧编号相关）
         readonly    short               _unkown8;               // ？？？
@@ -23,10 +23,28 @@ public static class Game
     }
 
     /// <summary>
+    /// 我方战斗时的临时数据
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct RMemberBattleTempData
+    {
+        public  ushort                  SpriteId;               // 战斗形象编号（在 F.MKF）
+        public  RPos                    Pos;                    // 当前在战场上的坐标 XY
+        readonly    short               _unkown3;               // ？？？
+        public  RPos                    OriginPos;              // 初始坐标 XY（备份，行动后归位用）
+        public  short                   CurrentFrameId;         // 当前帧编号（实时渲染时用）
+        public  short                   BakupFrameId;           // 帧编号备份（为 2 则清除刚阵亡的状态）
+        readonly    short               _unkown8;               // ？？？
+        readonly    short               _unkown9;               // ？？？
+        readonly    short               _unkown10;              // ？？？
+        public  ushort                  CooperativeMagicId;     // 合体法术编号
+    }
+
+    /// <summary>
     /// 我方当前回合的动作
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Pack = 1)]
-    public struct RHeroRoundActionEntity
+    public struct RMemberRoundActionEntity
     {
         [FieldOffset(0)]
         public  short           RawValue;       // 原生数值
@@ -37,16 +55,25 @@ public static class Game
     }
 
     /// <summary>
+    /// 我方死亡状态
+    /// </summary>
+    public enum TasMemberStateOfDeath : short
+    {
+        刚死亡     = -1,
+        正常       = 0,
+    }
+
+    /// <summary>
     /// 我方队员当前回合的动作
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct RMemberRoundAction
     {
-        public  TasTargetOfAttack           TargetOfAttack;     // 作用目标编号
-        public  TasMemberActions            MemberAction;       // 实际动作
-        public  RHeroRoundActionEntity      EntityId;           // 使用的仙术/道具实体编号
-        public  ushort                      MenuCursorId;       // 使用的实体是仙术/道具菜单中的第几个
-        readonly    short                   _unkown4;           // ？？？
+        public  TasTargetOfAttack               TargetOfAttack;     // 作用目标编号
+        public  TasMemberActions                MemberAction;       // 实际动作
+        public  RMemberRoundActionEntity        EntityId;           // 使用的仙术/道具实体编号
+        public  ushort                          MenuCursorId;       // 使用的实体是仙术/道具菜单中的第几个
+        public  TasMemberStateOfDeath           StateOfDeath;       // 是否刚刚阵亡（这会触发死亡对话）
     }
 
     /// <summary>

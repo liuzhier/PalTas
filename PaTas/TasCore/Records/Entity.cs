@@ -16,9 +16,9 @@ public class Entity
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct REnemyScript
     {
-        public  ushort      ScriptOnTurnStart;          // 回合开始脚本
-        public  ushort      ScriptOnBattleWon;          // 战斗结算脚本
-        public  ushort      ScriptOnAction;             // 回合行动脚本（出招脚本）
-        readonly short      _unkown3;                   // 未知脚本
+        public  ushort      TurnStart;      // 回合开始脚本
+        public  ushort      BattleWon;      // 战斗结算脚本
+        public  ushort      Action;         // 回合行动脚本（出招脚本）
+        readonly short      _unkown3;       // 未知脚本
     }
 }

@@ -1,10 +1,7 @@
 using PalTas.TasCore.Records;
-using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Vanara.PInvoke;
-using static Vanara.PInvoke.User32;
 
 namespace PalTas.TasCore;
 
@@ -13,12 +10,12 @@ public static class TasGlobal
     /// <summary>
     /// 当前场景编号
     /// </summary>
-    static int CurrentSceneId { get; set; }
+    public static short CurrentSceneId { get; set; }
 
     /// <summary>
     /// 队伍当前正在向哪个方向移动
     /// </summary>
-   public static TasDirection CurrentDirection { get; set; } = TasDirection.Current;
+    public static TasDirection CurrentDirection { get; set; } = TasDirection.Current;
 
     /// <summary>
     /// 全局行进步数
@@ -53,8 +50,11 @@ public static class TasGlobal
     {
         await Task.Delay(milliseconds, token);
 
+        //for (var i = 0; i < milliseconds && !token.IsCancellationRequested; i++) ;
+        //    Thread.SpinWait(1);
+
         // 非战斗时自动更新全局随机
-        if (!IsInBattle) AutoRandomNext();
+        //if (!IsInBattle && TasMain.战斗结算完毕) AutoRandomNext();
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public static class TasGlobal
     /// <returns>游戏是否正式开始</returns>
     public static async Task<bool> WaitGameOfficialStart()
     {
-        while ((CurrentSceneId == 0) || (CurrentSceneId == 0xFFFF))
+        while ((CurrentSceneId == 0) || (CurrentSceneId == -1))
         {
             await Delay(2);
 

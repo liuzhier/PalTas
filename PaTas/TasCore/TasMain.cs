@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Vanara.PInvoke;
+using static PalTas.TasCore.Records.Game;
 using static Vanara.PInvoke.User32;
 
 //[assembly: System.Diagnostics.Debuggable(System.Diagnostics.DebuggableAttribute.DebuggingModes.DisableOptimizations | System.Diagnostics.DebuggableAttribute.DebuggingModes.Default)]
@@ -20,16 +21,11 @@ public static class TasMain
     /// 是否需要滑步取物
     /// </summary>
     static volatile bool NeedPreInput;
-    //public static bool NeedPreInput
-    //{
-    //    get => _needPreInput;
-    //    set => _needPreInput = value;
-    //}
 
     /// <summary>
     /// Tas 异步任务管理器
     /// </summary>
-    static CancellationTokenSource TasToken { get; set; } = null!;
+    public static CancellationTokenSource TasToken { get; set; } = new();
 
     /// <summary>
     /// 初始化全局数据
@@ -131,7 +127,7 @@ public static class TasMain
             // 将光标设置到此处
             SetInventoryItemCursorId(currsorId);
 
-            // 使用道具
+            // 打开背包
             while (TasMemory.ReadUInt16(0x0019FC57) != 0x000F)
             {
                 PressKey(VK.VK_E);
@@ -140,6 +136,7 @@ public static class TasMain
                 await Delay(1, token);
             }
 
+            // 使用道具
             while (TasMemory.ReadUInt16(0x0019FC57) == 0x000F)
             {
                 PressKey(VK.VK_RETURN);
@@ -150,12 +147,14 @@ public static class TasMain
         }
     }
 
+    public static bool 战斗结算完毕 { get; set; } = true;
+
     /// <summary>
     /// 异步主脚本循环
     /// </summary>
     /// <param name="token">任务令牌</param>
     /// <returns>当前任务</returns>
-    static async Task ProcessTasMainLoop(CancellationToken token)
+    static async Task ProcessMainLoop(CancellationToken token)
     {
         //return;
         while (!token.IsCancellationRequested)
@@ -164,8 +163,11 @@ public static class TasMain
             await Delay(1, token);
 
             if (IsInBattle)
+            {
+                战斗结算完毕 = false;
                 // 执行自动战斗
                 await TasScript.RunBattle(token);
+            }
             else if (TasScript.BattleIsRunning)
             {
                 // 设置随机结果为 1
@@ -175,16 +177,20 @@ public static class TasMain
                 TasScript.SetBattleStatus(false);
 
                 // 战斗结束，跳过结算界面（结算界面消失时，触发当前战斗的脚本地址会变成 0xFFFF）
-                while (TriggerBattleScriptAddress == TasScript.TriggerBattleScriptAddressBackup)
+                while ((TriggerBattleScriptAddress == TasScript.TriggerBattleScriptAddressBackup) && TriggerBattleScriptAddress != 0xFFFF)
+                //while (TriggerBattleScriptAddress == TasScript.TriggerBattleScriptAddressBackup)
                 {
-                    PressKey(VK.VK_RETURN);
-                    await Delay(10, token);
-                    ReleaseKey(VK.VK_RETURN);
+                    //PressKey(VK.VK_RETURN);
+                    //await Delay(10, token);
+                    //ReleaseKey(VK.VK_RETURN);
 
-                    PressKey(VK.VK_SPACE);
+                    //PressKey(VK.VK_SPACE);
+                    //await Delay(10, token);
+                    //ReleaseKey(VK.VK_SPACE);
                     await Delay(10, token);
-                    ReleaseKey(VK.VK_SPACE);
                 }
+
+                战斗结算完毕 = true;
             }
 #if !ONLY_AUXILIARY_MODE
             else if (!TeamWalkPlanEnd)
@@ -241,48 +247,112 @@ public static class TasMain
     /// </summary>
     /// <param name="token">任务令牌</param>
     /// <returns>当前任务</returns>
-    static async Task ProcessTasRandomResult(CancellationToken token)
+    static async Task ProcessRandomResult(CancellationToken token)
     {
         while (!token.IsCancellationRequested)
         {
             // 检查回合中哪一方在行动，据此分配想要的随机结果
             if (IsInBattle && (CurrentActorId != TasBattleFighter.NULL) && (CurrentActorSelectorId != TasBattleFighter.First))
             {
-                // 检查该哪一方行动，我方永远最幸运，敌方永远最倒霉
-                if (CurrentActorTeam == TasBattleTeam.我方)
-                {
-                    var currentActorId = (int)CurrentActorId;
-                    var memberRoundAction = GetMemberRoundAction(currentActorId);
+                var memberBattleTempData = GetMemberBattleTempData(CurrentActorId);
+                var currentFrameId =  memberBattleTempData.CurrentFrameId;
 
+                // 检查该哪一方行动，我方永远最幸运，敌方永远最倒霉
+                if ((CurrentActorTeam == TasBattleTeam.我方) && (currentFrameId != 0))
+                {
+                    var memberRoundAction = GetMemberRoundAction(CurrentActorId);
                     switch (memberRoundAction.MemberAction)
                     {
                         case TasMemberActions.普攻:
-                            var heroId = GetMemberTrailRelativeToViewport(currentActorId).HeroId;
-                            SetRandomResult((heroId == TasHero.李逍遥) ? .3333333135f : 1);
-                            //SetRandomResult(1);
+                        case TasMemberActions.围攻:
+                            {
+                                var heroId = GetMemberTrailRelativeToViewport((int)CurrentActorId).HeroId;
+                                SetRandomResult((heroId == TasHero.李逍遥) ? .3333333135f : .8332999945f);
+                            }
                             break;
 
                         case TasMemberActions.防御:
-                            SetRandomResult(.6500000358f);
+                            {
+                                SetRandomResult(.6500000358f);
+                            }
                             break;
 
                         case TasMemberActions.逃跑:
-                            SetRandomResult(0);
+                            {
+                                SetRandomResult(0);
+                            }
                             break;
 
                         case TasMemberActions.进攻仙术:
-                            if (memberRoundAction.EntityId.MagicId == TasMagics.飞龙探云手)
-                                SetRandomResult(0);
-                            else
-                                SetRandomResult(1);
+                            {
+                                if (memberRoundAction.EntityId.MagicId == TasMagics.飞龙探云手)
+                                    SetRandomResult(0);
+                                else
+                                    SetRandomResult(1);
+                            }
                             break;
 
                         default:
-                            SetRandomResult(1);
+                            {
+                                SetRandomResult(1);
+                            }
                             break;
                     }
                 }
                 else AutoRandomNext();      // 托管敌人的随机
+            }
+
+            await Delay(1, token);
+        }
+    }
+
+    /// <summary>
+    /// 异步实时分配角色所需属性
+    /// </summary>
+    /// <param name="token">任务令牌</param>
+    /// <returns>当前任务</returns>
+    static async Task ProcessHeroRequiredAttribute(CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            if (IsInBattle)
+            {
+                // 战斗中为角色加成
+                for (var i = 0; i < MAX_MEMBER_IN_TEAM_COUNT; i++)
+                {
+                    var heroId = GetMemberTrailRelativeToViewport(i).HeroId;
+
+                    if (heroId == TasHero.李逍遥)
+                    {
+                        var memberRoundAction = GetMemberRoundAction((TasBattleFighter)i);
+                        switch (memberRoundAction.MemberAction)
+                        {
+                            case TasMemberActions.普攻:
+                                {
+                                    //if ((memberRoundAction.TargetOfAttack >= TasTargetOfAttack.First) && (memberRoundAction.TargetOfAttack <= TasTargetOfAttack.Last))
+                                    {
+                                        // 实现李逍遥封顶暴击
+                                        var enemyBattleTempData = GetEnemyBattleTempData(memberRoundAction.TargetOfAttack);
+                                        var enemyBaseData = GetEnemyBaseData(enemyBattleTempData.EnemyBaseDataId);
+                                        var 李逍遥武术 = GetHeroActualAttribute(TasHero.李逍遥, TasHeroAttribute.武术);
+                                        var requiredValue = TasScript.CalcRequiredAttackStrength(李逍遥武术, enemyBaseData.Attribute.Defense, enemyBaseData.Level, enemyBaseData.PhysicalResistance);
+                                        SetHeroTempAttribute(heroId, TasHeroExtraAttribute.武术, requiredValue);
+                                    }
+                                    //else goto default;
+                                }
+                                break;
+
+                            default:
+                                {
+                                    // 其他动作下没有武术加成
+                                    SetHeroTempAttribute(heroId, TasHeroExtraAttribute.武术, 0);
+                                }
+                                break;
+                        }
+
+                        break;
+                    }
+                }
 
                 await Delay(1, token);
             }
@@ -319,7 +389,7 @@ public static class TasMain
 
                 //TasScript.Progress = TasScript.TasProgress.赤鬼王测试;
 #if DEBUG
-                TasScript.Progress = TasScript.TasProgress.学功夫篇_离岛;
+                //TasScript.Progress = TasScript.TasProgress.学功夫篇_离岛;
                 //TasScript.SubStageId = 0;
 #endif // DEBUG
 
@@ -327,15 +397,19 @@ public static class TasMain
                 TasToken ??= new();
                 var token = TasToken.Token;
 
-                Task processPalWindowStatus = Task.Run(() => ProcessPalWindowStatus(token));
-                Task processTasMainLoop = Task.Run(() => ProcessTasMainLoop(token));
-                Task processSkipDialogue = Task.Run(() => ProcessSkipDialogue(token));
-                Task processCheckSearch = Task.Run(() => ProcessCheckSearch(token));
-                Task processTasRandomResult = Task.Run(() => ProcessTasRandomResult(token));
-                //Task initGlobalSceneEvent = Task.Run(() => TasScript.InitGlobalSceneEventAsync(token));
+                var processPalWindowStatus = Task.Run(() => ProcessPalWindowStatus(token));
+                var processMainLoop = Task.Run(() => ProcessMainLoop(token));
+                var processSkipDialogue = Task.Run(() => ProcessSkipDialogue(token));
+                var processCheckSearch = Task.Run(() => ProcessCheckSearch(token));
+                var processRandomResult = Task.Run(() => ProcessRandomResult(token));
+                var processHeroRequiredAttribute = Task.Run(() => ProcessHeroRequiredAttribute(token));
+                //var initGlobalSceneEvent = Task.Run(() => TasScript.InitGlobalSceneEventAsync(token));
 
                 // 等待所有任务完成清理（超时可选）
-                await Task.WhenAll(processPalWindowStatus, processTasMainLoop, processSkipDialogue, processCheckSearch);
+                await Task.WhenAll(processPalWindowStatus, processMainLoop, processSkipDialogue, processCheckSearch, processRandomResult, processHeroRequiredAttribute);
+
+                // 销毁任务令牌
+                TasToken.Dispose();
 
             Exit:
                 // 释放全局资源

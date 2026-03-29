@@ -13,7 +13,8 @@ public static unsafe class TasMemory
     public const uint
         PAL_EXE                                 = 0x0002_8000,                  // PAL.EXE
         PAL_EXE_BASE                            = PAL_EXE + 0x0040_0000,        // 数据基地址
-        GLOBAL_DATA                             = 0x0000_003C,                  // 全局数据基地址
+        UNKNOWN_STRUCTURE_00000024              = 0x0000_0024,                  // 未知结构 00000024
+        UNKNOWN_STRUCTURE_0000003C              = 0x0000_003C,                  // 未知结构 0000003C
         EVENT                                   = 0x0000_0144,                  // 连续结构：事件
         DIALOGUE_OUTPUT_DELAY                   = 0x0000_0232,                  // 对话逐字输出延迟
         CURRENT_DIALOGUE_LINE_ID                = 0x0000_0234,                  // 当前对话行数
@@ -32,6 +33,7 @@ public static unsafe class TasMemory
         MEMBER_TRAIL                            = 0x0000_04D0,                  // 连续结构：队伍步伐
         MEMBER_ROUND_ACTION                     = 0x0000_05A8,                  // 【战斗】连续结构：队员本回合的行动动作
         ENEMY_BATTLE_TEMP_DATA                  = 0x0000_05C0,                  // 【战斗】连续结构：战斗中敌方的战斗临时数据
+        MEMBER_BATTLE_TEMP_DATA                 = 0x0000_05D8,                  // 【战斗】连续结构：战斗中我方的战斗临时数据
         MEMBER_SPECIAL_STATUS                   = 0x0000_06D0,                  // 【战斗】连续结构：队员的增益/恶性状态
         MEMBER_POISON_STATUS                    = 0x0000_0710,                  // 【战斗】连续结构：队员的增益/恶性状态
         ENTITY                                  = 0x0000_0750,                  // 连续结构：实体对象（需解引用）
@@ -61,9 +63,11 @@ public static unsafe class TasMemory
             return addr;
         }
     }
-    public static uint GlobalDataAddr => PalBaseAddr + GLOBAL_DATA;
-    public static uint HeroExtraAttributeAddr => ReadUInt32(GlobalDataAddr) - 0x0000_051C;
-    public static uint ScriptEntryAddr => ReadUInt32(GlobalDataAddr) - 0x0000_0B88;
+    public static uint UnknownStructure00000024Addr => PalBaseAddr + UNKNOWN_STRUCTURE_00000024;
+    public static uint EnemyBaseDataAddr => ReadUInt32(ReadUInt32(UnknownStructure00000024Addr) - 0x0000_0840) + 0x0000_2010;
+    public static uint UnknownStructure0000003CAddr => PalBaseAddr + UNKNOWN_STRUCTURE_0000003C;
+    public static uint HeroExtraAttributeAddr => ReadUInt32(UnknownStructure0000003CAddr) - 0x0000_051C;
+    public static uint ScriptEntryAddr => ReadUInt32(UnknownStructure0000003CAddr) - 0x0000_0B88;
     public static uint EntityDataAddr => PalBaseAddr + ENTITY;
     public static uint EventAddr => PalBaseAddr + EVENT;
     public static uint CurrentSceneEventAddr => PalBaseAddr + CURRENT_SCENE_EVENT;
@@ -82,6 +86,7 @@ public static unsafe class TasMemory
     public static uint MemberTrailRelativeToViewportAddr => PalBaseAddr + MEMBER_TRAIL_RELATIVE_TO_VIEWPORT;
     public static uint MemberRoundActionAddr => PalBaseAddr + MEMBER_ROUND_ACTION;
     public static uint EnemyBattleTempDataAddr => PalBaseAddr + ENEMY_BATTLE_TEMP_DATA;
+    public static uint MemberBattleTempDataAddr => PalBaseAddr + MEMBER_BATTLE_TEMP_DATA;
     public static uint MemberSpecialStatusAddr => PalBaseAddr + MEMBER_SPECIAL_STATUS;
     public static uint MemberPoisonStatusAddr => PalBaseAddr + MEMBER_POISON_STATUS;
     public static uint InventoryAddr => PalBaseAddr + INVENTORY;
@@ -143,6 +148,8 @@ public static unsafe class TasMemory
     /// </summary>
     public static T Readm<T>(nint handle, int addr)
     {
+        if (WindowHandle == 0) return default!;
+
         var res = (T)default!;
         var t = typeof(T);
         int size = (t.Name == "String") ? 1024 : sizeof(T);
@@ -232,6 +239,8 @@ public static unsafe class TasMemory
     /// </summary>
     public static T ReadMemory<T>(uint baseAddress, params uint[] offsets)
     {
+        if (WindowHandle == 0) return default!;
+
         // 转换为int（32位地址）
         var addr = (int)baseAddress;
 
@@ -246,6 +255,8 @@ public static unsafe class TasMemory
     /// </summary>
     public static bool WriteMemory<T>(uint baseAddress, T value, params uint[] offsets)
     {
+        if (WindowHandle == 0) return default!;
+
         try
         {
             if (GetProcessHandle() == 0) return false;

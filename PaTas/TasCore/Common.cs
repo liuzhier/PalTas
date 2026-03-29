@@ -3,6 +3,7 @@ global using static PalTas.TasCore.TasCommon;
 global using static PalTas.TasCore.TasData;
 global using static PalTas.TasCore.TasGlobal;
 global using static PalTas.TasCore.TasWindow;
+
 using static Vanara.PInvoke.User32;
 
 namespace PalTas.TasCore;
@@ -170,12 +171,14 @@ public static class TasCommon
     /// </summary>
     public enum TasTargetOfAttack : short
     {
-        All     = -1,       // 全体目标
-        _0      = 0,        // 目标 0
-        _1      = 1,        // 目标 1
-        _2      = 2,        // 目标 2
-        _3      = 3,        // 目标 3
-        _4      = 4,        // 目标 4
+        All         = -1,       // 全体目标
+        _0          = 0,        // 目标 0
+        _1          = 1,        // 目标 1
+        _2          = 2,        // 目标 2
+        _3          = 3,        // 目标 3
+        _4          = 4,        // 目标 4
+        First       = _0,       // 首名人员
+        Last        = _4,       // 最后一名人员
     }
 
     /// <summary>

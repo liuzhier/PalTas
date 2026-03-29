@@ -3,7 +3,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,7 +15,7 @@ public static class TasWindow
     /// <summary>
     /// 窗口句柄
     /// </summary>
-    static HWND WindowHandle { get; set; }
+    public static HWND WindowHandle { get; set; }
     public static ConcurrentDictionary<User32.VK, bool> PressedKeys { get; set; } = [];
 
     /// <summary>

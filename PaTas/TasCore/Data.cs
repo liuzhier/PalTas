@@ -1,15 +1,13 @@
-using Avalonia;
 using PalTas.TasCore.Records;
 using System;
 using System.Diagnostics;
-using System.IO;
 using Vanara.PInvoke;
+using static PalTas.TasCore.Records.Base;
 using static PalTas.TasCore.Records.Core;
+using static PalTas.TasCore.Records.Entity;
 using static PalTas.TasCore.Records.Game;
-using static System.Net.Mime.MediaTypeNames;
-using static Vanara.PInvoke.Kernel32;
-using static Vanara.PInvoke.User32;
-using static Vanara.PInvoke.WinMm;
+using static Vanara.PInvoke.User32.RAWINPUT;
+using static Vanara.PInvoke.WinMm.MIXERLINE;
 
 namespace PalTas.TasCore;
 
@@ -27,7 +25,7 @@ public static unsafe class TasData
     /// </summary>
     /// <param name="needReadMemory">是否需要读取内存</param>
     /// <returns>当前场景编号</returns>
-    public static ushort GetCurrentSceneId() => TasMemory.ReadUInt16(TasMemory.CurrentSceneIdAddr);
+    public static short GetCurrentSceneId() => TasMemory.ReadInt16(TasMemory.CurrentSceneIdAddr);
 
     /// <summary>
     /// 获取指定场景
@@ -304,12 +302,6 @@ public static unsafe class TasData
     public static ushort GetCurrentEnemyTeamId() => TasMemory.ReadUInt16(TasMemory.CurrentEnemyTeamIdAddr);
 
     /// <summary>
-    /// 获取敌方战斗时的临时数据
-    /// </summary>
-    /// <returns>敌方战斗时的临时数据</returns>
-    public static ushort GetEnemyBattleTempData() => TasMemory.ReadUInt16(TasMemory.CurrentEnemyTeamIdAddr);
-
-    /// <summary>
     /// 获取当前是否在战斗中（游戏中共 0x017C 组敌方队伍）
     /// </summary>
     //public static bool IsInBattle => TasMemory.ReadByte(TasMemory.IsInBattleAddr) != 0;
@@ -466,6 +458,61 @@ public static unsafe class TasData
     /// <summary>
     /// 检查所有敌人是否均已阵亡，若全部阵亡则说明战斗结束
     /// </summary>
+    public static REnemyBattleTempData GetEnemyBattleTempData(TasTargetOfAttack targetId)
+    {
+        var baseAddr = TasMemory.ReadUInt32(TasMemory.EnemyBattleTempDataAddr) + (uint)(sizeof(REnemyBattleTempData) * (short)targetId);
+
+        return new()
+        {
+            EnemyBaseDataId = TasMemory.ReadInt16(baseAddr, sizeof(short) * 0),
+            //Pos = new()
+            //{
+            //    X = TasMemory.ReadInt16(baseAddr, sizeof(short) * 1),
+            //    Y = TasMemory.ReadInt16(baseAddr, sizeof(short) * 2),
+            //},
+            //OriginPos = new()
+            //{
+            //    X = TasMemory.ReadInt16(baseAddr, sizeof(short) * 3),
+            //    Y = TasMemory.ReadInt16(baseAddr, sizeof(short) * 4),
+            //},
+            //CurrentFrameId = TasMemory.ReadInt16(baseAddr, sizeof(short) * 5),
+            //HP = TasMemory.ReadInt16(baseAddr, sizeof(short) * 9),
+            //EnemyId = TasMemory.ReadInt16(baseAddr, sizeof(short) * 10),
+            //Script = new()
+            //{
+            //    TurnStart = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 11),
+            //    BattleWon = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 12),
+            //    Action = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 13),
+            //},
+        };
+    }
+
+    public static RMemberBattleTempData GetMemberBattleTempData(TasBattleFighter fightId)
+    {
+        var baseAddr = TasMemory.ReadUInt32(TasMemory.MemberBattleTempDataAddr) + (uint)(sizeof(REnemyBattleTempData) * (short)fightId);
+
+        return new()
+        {
+            //SpriteId = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 0),
+            //Pos = new()
+            //{
+            //    X = TasMemory.ReadInt16(baseAddr, sizeof(short) * 1),
+            //    Y = TasMemory.ReadInt16(baseAddr, sizeof(short) * 2),
+            //},
+            //OriginPos = new()
+            //{
+            //    X = TasMemory.ReadInt16(baseAddr, sizeof(short) * 4),
+            //    Y = TasMemory.ReadInt16(baseAddr, sizeof(short) * 5),
+            //},
+            CurrentFrameId = TasMemory.ReadInt16(baseAddr, sizeof(short) * 6),
+            //BakupFrameId = TasMemory.ReadInt16(baseAddr, sizeof(short) * 7),
+            //CooperativeMagicId = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 11),
+        };
+    }
+
+    /// <summary>
+    /// 检查所有敌人是否均已阵亡，若全部阵亡则说明战斗结束
+    /// </summary>
     public static bool CheckBattleEnd()
     {
         var BattleEnemyMaxId = TasMemory.ReadUInt16(TasMemory.BattleEnemyMaxIdAddr);
@@ -487,10 +534,10 @@ public static unsafe class TasData
     /// </summary>
     /// <param name="memberId">队员编号</param>
     /// <param name="action">动作参数</param>
-    public static RMemberRoundAction GetMemberRoundAction(int memberId)
+    public static RMemberRoundAction GetMemberRoundAction(TasBattleFighter fightId)
     {
         var baseAddr = TasMemory.ReadUInt32(TasMemory.MemberRoundActionAddr);
-        var baseOffset = baseAddr + (uint)(memberId * sizeof(RMemberRoundAction));
+        var baseOffset = baseAddr + (uint)((int)fightId * sizeof(RMemberRoundAction));
 
         return new()
         {
@@ -535,6 +582,44 @@ public static unsafe class TasData
     /// <param name="resilience">巫抗</param>
     public static void SetEnemyResilience(TasEnemys enemyId, ushort resilience) =>
         TasMemory.WriteUInt16(TasMemory.ReadUInt32(TasMemory.EntityDataAddr), resilience, (uint)enemyId * 0x000E + sizeof(ushort) * 1);
+
+    /// <summary>
+    /// 获取敌人实体数据
+    /// </summary>
+    /// <param name="enemyId">敌人实体编号</param>
+    /// <returns>敌人实体数据</returns>
+    public static REnemy GetEnemyEntity(TasEnemys enemyId)
+    {
+        var baseAddr = TasMemory.ReadUInt32(TasMemory.EntityDataAddr) + (uint)enemyId * 0x000E;
+
+        return new()
+        {
+            EnemyDataId = TasMemory.ReadUInt16(baseAddr, sizeof(ushort) * 0),
+            ResistanceToSorcery = TasMemory.ReadInt16(baseAddr, sizeof(ushort) * 1),
+            Script = new()
+            {
+                TurnStart = TasMemory.ReadUInt16(baseAddr, sizeof(ushort) * 2),
+                BattleWon = TasMemory.ReadUInt16(baseAddr, sizeof(ushort) * 3),
+                Action = TasMemory.ReadUInt16(baseAddr, sizeof(ushort) * 4),
+            },
+        };
+    }
+
+    /// <summary>
+    /// 获取敌人实体数据
+    /// </summary>
+    /// <param name="enemyId">敌人实体编号</param>
+    /// <returns>敌人实体数据</returns>
+    public static void SetEnemyEntity(TasEnemys enemyId, REnemy enemy)
+    {
+        var baseAddr = TasMemory.ReadUInt32(TasMemory.EntityDataAddr) + (uint)enemyId * 0x000E;
+
+        TasMemory.WriteUInt16(baseAddr, enemy.EnemyDataId, sizeof(short) * 0);
+        TasMemory.WriteInt16(baseAddr, enemy.ResistanceToSorcery, sizeof(short) * 1);
+        TasMemory.WriteUInt16(baseAddr, enemy.Script.TurnStart, sizeof(short) * 2);
+        TasMemory.WriteUInt16(baseAddr, enemy.Script.BattleWon, sizeof(short) * 3);
+        TasMemory.WriteUInt16(baseAddr, enemy.Script.Action, sizeof(short) * 4);
+    }
 
     /// <summary>
     /// 修改脚本内容
@@ -667,5 +752,103 @@ public static unsafe class TasData
             value += GetHeroExtraAttribute(heroId, (TasHeroExtraAttribute)(heroAttributeId - TasHeroAttribute.武术));
 
         return value;
+    }
+
+    /// <summary>
+    /// 获取敌方基础数据
+    /// </summary>
+    /// <param name="baseDataId">基础数据编号</param>
+    /// <returns>敌方基础数据</returns>
+    public static REnemyBaseData GetEnemyBaseData(int baseDataId)
+    {
+        var baseAddr = TasMemory.EnemyBaseDataAddr + (uint)(sizeof(REnemyBaseData) * baseDataId);
+        var data = new REnemyBaseData()
+        {
+            IdleFrames = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 0),
+            MagicFrames = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 1),
+            AttackFrames = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 2),
+            IdleAnimSpeed = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 3),
+            ActWaitFrames = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 4),
+            YPosOffset = TasMemory.ReadInt16(baseAddr, sizeof(short) * 5),
+            AttackSound = TasMemory.ReadInt16(baseAddr, sizeof(short) * 6),
+            ActionSound = TasMemory.ReadInt16(baseAddr, sizeof(short) * 7),
+            MagicSound = TasMemory.ReadInt16(baseAddr, sizeof(short) * 8),
+            DeathSound = TasMemory.ReadInt16(baseAddr, sizeof(short) * 9),
+            CallSound = TasMemory.ReadInt16(baseAddr, sizeof(short) * 10),
+            MaxHP = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 11),
+            Exp = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 12),
+            Cash = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 13),
+            Level = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 14),
+            MagicId = TasMemory.ReadInt16(baseAddr, sizeof(short) * 15),
+            MagicRate = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 16),
+            AttackEquivItemId = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 17),
+            AttackEquivItemRate = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 18),
+            StealItemId = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 19),
+            StealItemCount = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 20),
+            Attribute = new()
+            {
+                AttackStrength = TasMemory.ReadInt16(baseAddr, sizeof(short) * 21),
+                MagicStrength = TasMemory.ReadInt16(baseAddr, sizeof(short) * 22),
+                Defense = TasMemory.ReadInt16(baseAddr, sizeof(short) * 23),
+                Dexterity = TasMemory.ReadInt16(baseAddr, sizeof(short) * 24),
+                FleeRate = TasMemory.ReadInt16(baseAddr, sizeof(short) * 25),
+            },
+            PoisonResistance = TasMemory.ReadInt16(baseAddr, sizeof(short) * 26),
+            PhysicalResistance = TasMemory.ReadInt16(baseAddr, sizeof(short) * 32),
+            DualMove = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 33),
+            CollectValue = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 34),
+        };
+        data.ElementalResistance[0] = TasMemory.ReadInt16(baseAddr, sizeof(short) * 27);
+        data.ElementalResistance[1] = TasMemory.ReadInt16(baseAddr, sizeof(short) * 28);
+        data.ElementalResistance[2] = TasMemory.ReadInt16(baseAddr, sizeof(short) * 29);
+        data.ElementalResistance[3] = TasMemory.ReadInt16(baseAddr, sizeof(short) * 30);
+        data.ElementalResistance[4] = TasMemory.ReadInt16(baseAddr, sizeof(short) * 31);
+        return data;
+    }
+
+    /// <summary>
+    /// 获取敌方基础数据
+    /// </summary>
+    /// <param name="baseDataId">基础数据编号</param>
+    /// <returns>敌方基础数据</returns>
+    public static void SetEnemyBaseData(int baseDataId, REnemyBaseData data)
+    {
+        var baseAddr = TasMemory.EnemyBaseDataAddr + (uint)(sizeof(REnemyBaseData) * baseDataId);
+        TasMemory.WriteUInt16(baseAddr, data.IdleFrames, sizeof(short) * 0);
+        TasMemory.WriteUInt16(baseAddr, data.MagicFrames, sizeof(short) * 1);
+        TasMemory.WriteUInt16(baseAddr, data.AttackFrames, sizeof(short) * 2);
+        TasMemory.WriteUInt16(baseAddr, data.IdleAnimSpeed, sizeof(short) * 3);
+        TasMemory.WriteUInt16(baseAddr, data.ActWaitFrames, sizeof(short) * 4);
+        TasMemory.WriteInt16(baseAddr, data.YPosOffset, sizeof(short) * 5);
+        TasMemory.WriteInt16(baseAddr, data.AttackSound, sizeof(short) * 6);
+        TasMemory.WriteInt16(baseAddr, data.ActionSound, sizeof(short) * 7);
+        TasMemory.WriteInt16(baseAddr, data.MagicSound, sizeof(short) * 8);
+        TasMemory.WriteInt16(baseAddr, data.DeathSound, sizeof(short) * 9);
+        TasMemory.WriteInt16(baseAddr, data.CallSound, sizeof(short) * 10);
+        TasMemory.WriteUInt16(baseAddr, data.MaxHP, sizeof(short) * 11);
+        TasMemory.WriteUInt16(baseAddr, data.Exp, sizeof(short) * 12);
+        TasMemory.WriteUInt16(baseAddr, data.Cash, sizeof(short) * 13);
+        TasMemory.WriteUInt16(baseAddr, data.Level, sizeof(short) * 14);
+        TasMemory.WriteInt16(baseAddr, data.MagicId, sizeof(short) * 15);
+        TasMemory.WriteUInt16(baseAddr, data.MagicRate, sizeof(short) * 16);
+        TasMemory.WriteUInt16(baseAddr, data.AttackEquivItemId, sizeof(short) * 17);
+        TasMemory.WriteUInt16(baseAddr, data.AttackEquivItemRate, sizeof(short) * 18);
+        TasMemory.WriteUInt16(baseAddr, data.StealItemId, sizeof(short) * 19);
+        TasMemory.WriteUInt16(baseAddr, data.StealItemCount, sizeof(short) * 20);
+        var attr = data.Attribute;
+        TasMemory.WriteInt16(baseAddr, attr.AttackStrength, sizeof(short) * 21);
+        TasMemory.WriteInt16(baseAddr, attr.MagicStrength, sizeof(short) * 22);
+        TasMemory.WriteInt16(baseAddr, attr.Defense, sizeof(short) * 23);
+        TasMemory.WriteInt16(baseAddr, attr.Dexterity, sizeof(short) * 24);
+        TasMemory.WriteInt16(baseAddr, attr.FleeRate, sizeof(short) * 25);
+        TasMemory.WriteInt16(baseAddr, data.PoisonResistance, sizeof(short) * 26);
+        TasMemory.WriteInt16(baseAddr, data.ElementalResistance[0], sizeof(short) * 27);
+        TasMemory.WriteInt16(baseAddr, data.ElementalResistance[1], sizeof(short) * 28);
+        TasMemory.WriteInt16(baseAddr, data.ElementalResistance[2], sizeof(short) * 29);
+        TasMemory.WriteInt16(baseAddr, data.ElementalResistance[3], sizeof(short) * 30);
+        TasMemory.WriteInt16(baseAddr, data.ElementalResistance[4], sizeof(short) * 31);
+        TasMemory.WriteInt16(baseAddr, data.PhysicalResistance, sizeof(short) * 32);
+        TasMemory.WriteUInt16(baseAddr, data.DualMove, sizeof(short) * 33);
+        TasMemory.WriteUInt16(baseAddr, data.CollectValue, sizeof(short) * 34);
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using static PalTas.TasCore.Records.Game;
@@ -63,6 +64,16 @@ public static partial class TasScript
             0x0000, 0x0000, 0x0000, 0x0000,     // ===========================================
         ]);
 
+        // 蜜蜂必定掉落
+        var 蜜蜂 = GetEnemyEntity(TasEnemys.蜜蜂);
+        蜜蜂.Script.BattleWon++;
+        SetEnemyEntity(TasEnemys.蜜蜂, 蜜蜂);
+
+        // 蛹（蜂蛹）必定掉落
+        var 蛹 = GetEnemyEntity(TasEnemys.蛹);
+        蛹.Script.BattleWon++;
+        SetEnemyEntity(TasEnemys.蛹, 蛹);
+
         //// 赤鬼王测试
         //var addr = (uint)TasEnemys.赤鬼王 * 0x000E;
         //TasMemory.WriteUInt16(TasMemory.ReadUInt32(TasMemory.EntityDataAddr), 0xA60D, addr + sizeof(ushort) * 2);
@@ -93,9 +104,9 @@ public static partial class TasScript
             for (var i = 0; i < MAX_MEMBER_IN_TEAM_COUNT; i++)
             {
                 SetMemberSpecialStatus(i, TasSpecialStatus.力拔山河, 0x7FFF);
-                //SetMemberSpecialStatus(i, TasSpecialStatus.坚如磐石, 0x7FFF);
-                //SetMemberSpecialStatus(i, TasSpecialStatus.身轻如燕, 0x7FFF);
-                //SetMemberSpecialStatus(i, TasSpecialStatus.动若脱兔, 0x7FFF);
+                SetMemberSpecialStatus(i, TasSpecialStatus.坚如磐石, 0x7FFF);
+                SetMemberSpecialStatus(i, TasSpecialStatus.身轻如燕, 0x7FFF);
+                SetMemberSpecialStatus(i, TasSpecialStatus.动若脱兔, 0x7FFF);
             }
 
             // 等待完全进入战斗
@@ -122,6 +133,62 @@ public static partial class TasScript
         BattleScriptRound = (IsInBattle) ? ++BattleScriptRound : -1;        // 更新回合数统计
         SetCurrentActorSelectorId(TasBattleFighter.Last);                   // 设置当前不该选择动作
         SetCurrentActorId(TasBattleFighter.NULL);                           // 设置当前没有人正在行动
+    }
+
+    /// <summary>
+    /// 计算所需额外武术值
+    /// </summary>
+    /// <param name="heroAttackStrength">角色武术</param>
+    /// <param name="enemyDefense">敌方防御</param>
+    /// <param name="enemyLevel">敌方等级</param>
+    /// <param name="enemyPhysicalResistance">敌方物抗</param>
+    /// <returns>所需额外武术值</returns>
+    public static short CalcRequiredAttackStrength(short heroAttackStrength, short enemyDefense, ushort enemyLevel, short enemyPhysicalResistance)
+    {
+        // --- 步骤 1: 计算敌方实际防御 D ---
+        // 对应文档 C38: D = 敌方防御 + (敌方等级 + 6) * 4
+        var enemyActualDefense = enemyDefense + (enemyLevel + 6) * 4;
+
+        // --- 步骤 2: 计算当前基础伤害 B0 ---
+        // 对应文档 C40 以及 C11-C12 的分段公式
+        var B0 = 0f;
+
+        if (heroAttackStrength > enemyActualDefense)
+            // 公式: A - 0.8D (最常见的情况)
+            B0 = heroAttackStrength - 0.8f * enemyActualDefense;
+        else if (heroAttackStrength > 0.6f * enemyActualDefense)
+            // 公式: 0.5A - 0.3D
+            B0 = 0.5f * heroAttackStrength - 0.3f * enemyActualDefense;
+        else
+            // 此时基础伤害为 0，破不了防
+            B0 = 0;
+
+        // --- 步骤 3: 计算目标基础伤害 B_target ---
+        // 对应文档 C42: B_target ≈ 1.08000000257 * B0 + 0.41333334582 * R
+        // 这里保留了文档中的高精度系数，确保计算精准
+        var B_target = 1.08000000257f * B0 + 0.41333334582f * enemyPhysicalResistance;
+
+        // --- 步骤 4: 反推目标武术 A_target ---
+        // 对应文档 C44-C46 的分段反推
+        var A_target = 0f;
+
+        // 判定条件：B_target 是否大于 0.2D
+        if (B_target > 0.2f * enemyPhysicalResistance)
+            // 对应文档 C44: 说明目标在第三段 (A' > D)
+            // 公式: A_target = B_target + 0.8D
+            A_target = B_target + 0.8f * enemyActualDefense;
+        else
+            // 对应文档 C46: 说明目标在第二段 (0.6D < A' <= D)
+            // 公式: A_target = 2 * B_target + 0.6D
+            A_target = 2.0f * B_target + 0.6f * enemyActualDefense;
+
+        // --- 步骤 5: 计算差值并向上取整 ---
+        // 对应文档 C48: ΔA = ceil(A_target) - A
+        // 使用 Math.Ceiling 向上取整，确保伤害至少持平
+        var delta = Math.Ceiling(A_target) - heroAttackStrength;
+
+        // 如果算出负数（比如属性已经溢出了），则不需要加
+        return short.Max(0, (short)delta);
     }
 
     /// <summary>

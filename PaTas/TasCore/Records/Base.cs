@@ -17,7 +17,7 @@ public static unsafe class Base
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct REnemy
+    public struct REnemyBaseData
     {
         public  ushort              IdleFrames;                                 // 原地蠕动帧数
         public  ushort              MagicFrames;                                // 施法帧数
