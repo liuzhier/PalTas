@@ -18,7 +18,7 @@ public static class Game
         readonly    short               _unkown7;               // ？？？（和帧编号相关）
         readonly    short               _unkown8;               // ？？？
         public  short                   HP;                     // 剩余 HP
-        public  short                   EnemyId;                // 敌人实体编号
+        public  TasEnemys               EnemyId;                // 敌人实体编号
         public  Entity.REnemyScript     Script;                 // 各种脚本
     }
 
@@ -37,7 +37,7 @@ public static class Game
         readonly    short               _unkown8;               // ？？？
         readonly    short               _unkown9;               // ？？？
         readonly    short               _unkown10;              // ？？？
-        public  ushort                  CooperativeMagicId;     // 合体法术编号
+        public  TasMagics               CooperativeMagicId;     // 合体法术编号
     }
 
     /// <summary>

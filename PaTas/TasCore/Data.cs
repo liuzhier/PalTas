@@ -6,8 +6,6 @@ using static PalTas.TasCore.Records.Base;
 using static PalTas.TasCore.Records.Core;
 using static PalTas.TasCore.Records.Entity;
 using static PalTas.TasCore.Records.Game;
-using static Vanara.PInvoke.User32.RAWINPUT;
-using static Vanara.PInvoke.WinMm.MIXERLINE;
 
 namespace PalTas.TasCore;
 
@@ -432,6 +430,11 @@ public static unsafe class TasData
     /// <summary>
     /// 设置总是暴击（李逍遥 6 倍暴击）
     /// </summary>
+    public static float RandomResult => TasMemory.ReadSingle(TasMemory.RandomResultAddr);
+
+    /// <summary>
+    /// 设置总是暴击（李逍遥 6 倍暴击）
+    /// </summary>
     public static void SetRandomResult(float randomResult) => TasMemory.WriteSingle(TasMemory.RandomResultAddr, randomResult);
 
     /// <summary>
@@ -458,32 +461,32 @@ public static unsafe class TasData
     /// <summary>
     /// 检查所有敌人是否均已阵亡，若全部阵亡则说明战斗结束
     /// </summary>
-    public static REnemyBattleTempData GetEnemyBattleTempData(TasTargetOfAttack targetId)
+    public static REnemyBattleTempData GetEnemyBattleTempData(TasBattleFighter targetId)
     {
         var baseAddr = TasMemory.ReadUInt32(TasMemory.EnemyBattleTempDataAddr) + (uint)(sizeof(REnemyBattleTempData) * (short)targetId);
 
         return new()
         {
             EnemyBaseDataId = TasMemory.ReadInt16(baseAddr, sizeof(short) * 0),
-            //Pos = new()
-            //{
-            //    X = TasMemory.ReadInt16(baseAddr, sizeof(short) * 1),
-            //    Y = TasMemory.ReadInt16(baseAddr, sizeof(short) * 2),
-            //},
-            //OriginPos = new()
-            //{
-            //    X = TasMemory.ReadInt16(baseAddr, sizeof(short) * 3),
-            //    Y = TasMemory.ReadInt16(baseAddr, sizeof(short) * 4),
-            //},
-            //CurrentFrameId = TasMemory.ReadInt16(baseAddr, sizeof(short) * 5),
-            //HP = TasMemory.ReadInt16(baseAddr, sizeof(short) * 9),
-            //EnemyId = TasMemory.ReadInt16(baseAddr, sizeof(short) * 10),
-            //Script = new()
-            //{
-            //    TurnStart = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 11),
-            //    BattleWon = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 12),
-            //    Action = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 13),
-            //},
+            Pos = new()
+            {
+                X = TasMemory.ReadInt16(baseAddr, sizeof(short) * 1),
+                Y = TasMemory.ReadInt16(baseAddr, sizeof(short) * 2),
+            },
+            OriginPos = new()
+            {
+                X = TasMemory.ReadInt16(baseAddr, sizeof(short) * 3),
+                Y = TasMemory.ReadInt16(baseAddr, sizeof(short) * 4),
+            },
+            CurrentFrameId = TasMemory.ReadInt16(baseAddr, sizeof(short) * 5),
+            HP = TasMemory.ReadInt16(baseAddr, sizeof(short) * 9),
+            EnemyId = (TasEnemys)TasMemory.ReadUInt16(baseAddr, sizeof(short) * 10),
+            Script = new()
+            {
+                TurnStart = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 11),
+                BattleWon = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 12),
+                Action = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 13),
+            },
         };
     }
 
@@ -506,7 +509,7 @@ public static unsafe class TasData
             //},
             CurrentFrameId = TasMemory.ReadInt16(baseAddr, sizeof(short) * 6),
             //BakupFrameId = TasMemory.ReadInt16(baseAddr, sizeof(short) * 7),
-            //CooperativeMagicId = TasMemory.ReadUInt16(baseAddr, sizeof(short) * 11),
+            //CooperativeMagicId = (TasMagics)TasMemory.ReadUInt16(baseAddr, sizeof(short) * 11),
         };
     }
 
@@ -851,4 +854,10 @@ public static unsafe class TasData
         TasMemory.WriteUInt16(baseAddr, data.DualMove, sizeof(short) * 33);
         TasMemory.WriteUInt16(baseAddr, data.CollectValue, sizeof(short) * 34);
     }
+
+    /// <summary>
+    /// 获取我方队伍最大索引
+    /// </summary>
+    /// <returns>我方队伍最大索引</returns>
+    public static ushort BattleMemberMaxId => TasMemory.ReadUInt16(TasMemory.BattleMemberMaxIdAddr);
 }

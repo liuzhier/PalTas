@@ -8,6 +8,11 @@ namespace PalTas.TasCore;
 public static class TasGlobal
 {
     /// <summary>
+    /// Tas 程序窗口
+    /// </summary>
+    public static MainWindow TasMainWindow { get; set; } = null!;
+
+    /// <summary>
     /// 当前场景编号
     /// </summary>
     public static short CurrentSceneId { get; set; }

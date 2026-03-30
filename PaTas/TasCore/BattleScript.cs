@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using static PalTas.TasCore.Records.Game;
@@ -32,6 +33,11 @@ public static partial class TasScript
     /// 当前回合数自定义快捷键动作
     /// </summary>
     public static RShortcutKeyRoundAction ShortcutKeyRoundAction { get; set; } = null!;
+
+    /// <summary>
+    /// 队员们对应的角色编号
+    /// </summary>
+    public static Dictionary<TasHero, TasBattleFighter> MembersHeroId { get; set; } = [];
 
     /// <summary>
     /// 初始化自动化战斗模块
@@ -98,15 +104,16 @@ public static partial class TasScript
         BattleBeginning = !isBeginning;     // 战斗刚刚启动的开关
         NextRound();                        // 更新回合状态
 
+        // 判断刚刚进入战斗，有些数据需要初始化
         if (isBeginning)
         {
             // 给所有人加上 32767 回合天罡、醉仙
             for (var i = 0; i < MAX_MEMBER_IN_TEAM_COUNT; i++)
             {
                 SetMemberSpecialStatus(i, TasSpecialStatus.力拔山河, 0x7FFF);
-                SetMemberSpecialStatus(i, TasSpecialStatus.坚如磐石, 0x7FFF);
-                SetMemberSpecialStatus(i, TasSpecialStatus.身轻如燕, 0x7FFF);
-                SetMemberSpecialStatus(i, TasSpecialStatus.动若脱兔, 0x7FFF);
+                //SetMemberSpecialStatus(i, TasSpecialStatus.坚如磐石, 0x7FFF);
+                //SetMemberSpecialStatus(i, TasSpecialStatus.身轻如燕, 0x7FFF);
+                //SetMemberSpecialStatus(i, TasSpecialStatus.动若脱兔, 0x7FFF);
             }
 
             // 等待完全进入战斗
@@ -121,6 +128,16 @@ public static partial class TasScript
             var 赵灵儿额外身法 = (short)float.Ceiling(GetHeroActualAttribute(TasHero.赵灵儿, TasHeroAttribute.身法) * 2f / 9);
             SetHeroTempAttribute(TasHero.李逍遥, TasHeroExtraAttribute.身法, 李逍遥额外身法);
             SetHeroTempAttribute(TasHero.赵灵儿, TasHeroExtraAttribute.身法, 赵灵儿额外身法);
+
+            // 备份队友对应的角色编号
+            var membersHeroId = new TasHero[BattleMemberMaxId];
+            for (var i = 0; i <= BattleMemberMaxId; i++)
+                membersHeroId[i] = GetMemberTrailRelativeToViewport(i).HeroId;
+            MembersHeroId = [];
+            for (var i = TasHero.李逍遥; i <= TasHero.盖罗娇; i++)
+                for (var j = TasBattleFighter.First; j <= TasBattleFighter.Last; j++)
+                    if (membersHeroId[(int)j] == i)
+                        MembersHeroId[i] = j;
         }
     }
 
@@ -208,8 +225,7 @@ public static partial class TasScript
             goto AwaitActionSelection;
         }
 
-        return;
-
+#if !ONLY_AUXILIARY_MODE
         // 自动选择队员本回合需要执行的动作
         BattleAutoSelectAction();
 
@@ -245,25 +261,26 @@ public static partial class TasScript
 
             await Delay(1, token);
         }
+#endif  // !ONLY_AUXILIARY_MODE
 
     AwaitActionSelection:
         // 保证我方总是先手
         SetRandomResult(0);
 
         // 等待允许选择动作
-        //while ((CurrentActorSelectorId != TasBattleFighter.First) && IsInBattle)
-        //{
-        //    // 跳过随时可能出现的条幅框
-        //    PressKey(VK.VK_RETURN);
-        //    await Delay(1, token);
-        //    ReleaseKey(VK.VK_RETURN);
+        while ((CurrentActorSelectorId != TasBattleFighter.First) && IsInBattle)
+        {
+            // 跳过随时可能出现的条幅框
+            PressKey(VK.VK_RETURN);
+            await Delay(1, token);
+            ReleaseKey(VK.VK_RETURN);
 
-        //    PressKey(VK.VK_SPACE);
-        //    await Delay(1, token);
-        //    ReleaseKey(VK.VK_SPACE);
+            PressKey(VK.VK_SPACE);
+            await Delay(1, token);
+            ReleaseKey(VK.VK_SPACE);
 
-        //    await Delay(1, token);
-        //}
+            await Delay(1, token);
+        }
 
         // 回合结束，更新回合状态
         NextRound();

@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" Width="300" Height="200" CanResize="False" WindowStartupLocation="Manual"
+        mc:Ignorable="d" Width="400" Height="250" CanResize="False" WindowStartupLocation="Manual"
         x:Class="PalTas.MainWindow" Closing="Window_Closing" Background="#FFF0F0F0" TransparencyBackgroundFallback="Transparent"
         Title="PalTas">
     <Grid RowDefinitions="*, 36">
@@ -25,11 +25,27 @@
                     <Label x:Name="PosY_Label" Foreground="Red">游戏未开始</Label>
                 </DockPanel>
             </Grid>
-            <DockPanel Grid.Row="3">
+            <Grid Grid.Row="3" ColumnDefinitions="*, *">
+                <DockPanel Grid.Column="0">
+                    <Label>当前行动阵营：</Label>
+                    <Label x:Name="CurrentActionTeam_Label" Foreground="Red">游戏未开始</Label>
+                </DockPanel>
+                <DockPanel Grid.Column="1">
+                    <Label>正在行动者：</Label>
+                    <Label x:Name="ActorId_Label" Foreground="Red">游戏未开始</Label>
+                </DockPanel>
+            </Grid>
+            <Grid Grid.Row="4">
+                <DockPanel>
+                    <Label>随机结果：</Label>
+                    <Label x:Name="RandomResult_Label" Foreground="Red">游戏未开始</Label>
+                </DockPanel>
+            </Grid>
+            <DockPanel Grid.Row="5">
                 <Label>任务目标：</Label>
                 <Label x:Name="CurrentProgress_Label" Foreground="Red">游戏未开始</Label>
             </DockPanel>
-            <DockPanel Grid.Row="4">
+            <DockPanel Grid.Row="6">
                 <Label>方向：</Label>
                 <Label x:Name="CurrentWalkDirection_Label" Foreground="Red">游戏未开始</Label>
             </DockPanel>

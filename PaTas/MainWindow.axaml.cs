@@ -17,6 +17,9 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        TasMainWindow = this;
+
+        Title += $"[{BuildInfo.CompileDateTime}]";
     }
 
     /// <summary>
@@ -30,12 +33,7 @@ public partial class MainWindow : Window
         (sender as Button)?.IsEnabled = false;
 
         // 运行 Tas 核心
-        var token = TasMain.TasToken.Token;
-        var tasCoreMain =  Task.Run(async() => await TasMain.TasCoreMain());
-        var readAndUpdateCurrentGameStatus = Task.Run(async() => await ReadAndUpdateCurrentGameStatus(token));
-
-        // 等待所有任务完成清理（超时可选）
-        await Task.WhenAll(tasCoreMain, readAndUpdateCurrentGameStatus);
+        await Task.Run(async() => await TasMain.TasCoreMain());
     }
 
     /// <summary>
@@ -69,7 +67,7 @@ public partial class MainWindow : Window
     /// </summary>
     /// <param name="token">任务令牌</param>
     /// <returns>当前任务</returns>
-    async Task ReadAndUpdateCurrentGameStatus(CancellationToken token)
+    public async Task ReadAndUpdateCurrentGameStatus(CancellationToken token)
     {
         while (!token.IsCancellationRequested)
         {
@@ -86,8 +84,8 @@ public partial class MainWindow : Window
                     PosY_Label.Content = $"{current.Y}";
 
 #if ONLY_AUXILIARY_MODE
-                    CurrentProgress_Label.Content = "仅辅助模式不进行判断";
-                    CurrentWalkDirection_Label.Content = "仅辅助模式不进行判断";
+                    CurrentProgress_Label.Content = CurrentWalkDirection_Label.Content = "仅辅助模式不进行判断";
+                    CurrentProgress_Label.Content = GetMemberBattleTempData(CurrentActorId).CurrentFrameId;
 #else
                     CurrentProgress_Label.Content = TasScript.Progress;
                     CurrentWalkDirection_Label.Content = CurrentDirection switch
@@ -99,9 +97,43 @@ public partial class MainWindow : Window
                         TasDirection.Current or _ => "无",
                     };
 #endif  // ONLY_AUXILIARY_MODE
+
+                    if (IsInBattle)
+                    {
+                        // 战斗开始，监控是谁在行动
+                        switch (CurrentActorTeam)
+                        {
+                            case TasBattleTeam.我方:
+                                {
+                                    CurrentActionTeam_Label.Content = "我方";
+                                    var heroId = GetMemberTrailRelativeToViewport((int)CurrentActorId).HeroId;
+                                    ActorId_Label.Content = $"【{CurrentActorId}】{heroId}";
+                                }
+                                break;
+
+                            case TasBattleTeam.敌方:
+                                {
+                                    CurrentActionTeam_Label.Content = "敌方";
+                                    var enemyId = GetEnemyBattleTempData(CurrentActorId).EnemyId;
+                                    ActorId_Label.Content = $"【{CurrentActorId}】{enemyId}";
+                                }
+                                break;
+
+                            default:
+                                {
+                                    CurrentActionTeam_Label.Content = ActorId_Label.Content = "无";
+                                }
+                                break;
+                        }
+                    }
+                    else
+                        // 战斗未开始
+                        CurrentActionTeam_Label.Content = ActorId_Label.Content = "战斗未开始";
+
+                    RandomResult_Label.Content = $"{RandomResult}";
                 });
 
-                await Delay(50, token);
+                await Delay(33, token);
             }
         }
     }

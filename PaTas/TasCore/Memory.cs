@@ -19,6 +19,7 @@ public static unsafe class TasMemory
         DIALOGUE_OUTPUT_DELAY                   = 0x0000_0232,                  // 对话逐字输出延迟
         CURRENT_DIALOGUE_LINE_ID                = 0x0000_0234,                  // 当前对话行数
         VIEWPORT_POSITION                       = 0x0000_0262,                  // 视口坐标
+        BATTLE_MEMEBER_MAX_ID                   = 0x0000_0266,                  // 【战斗】我方最大索引
         CURRENT_SCENE_ID                        = 0x0000_026A,                  // 当前场景编号
         LEADER_DIRECTION                        = 0x0000_026E,                  // 领队当前面朝方向
         CURRENT_SCENE_MAX_EVENT_ID              = 0x0000_0296,                  // 当前场景事件最大编号
@@ -75,6 +76,7 @@ public static unsafe class TasMemory
     public static uint DialogueOutputDelayAddr => PalBaseAddr + DIALOGUE_OUTPUT_DELAY;
     public static uint CurrentDialogueLineIdAddr => PalBaseAddr + CURRENT_DIALOGUE_LINE_ID;
     public static uint ViewportPosAddr => PalBaseAddr + VIEWPORT_POSITION;
+    public static uint BattleMemberMaxIdAddr => PalBaseAddr + BATTLE_MEMEBER_MAX_ID;
     public static uint CurrentSceneIdAddr => PalBaseAddr + CURRENT_SCENE_ID;
     public static uint LeaderDirectionAddr => PalBaseAddr + LEADER_DIRECTION;
     public static uint CurrentActorSelectorIdAddr => PalBaseAddr + CURRENT_ACTOR_SELECTOR_ID;
@@ -304,6 +306,7 @@ public static unsafe class TasMemory
     /// 读取4字节数据
     /// </summary>
     public static uint ReadUInt32(uint baseAddress, params uint[] offsets) => ReadMemory<uint>(baseAddress, offsets);
+    public static float ReadSingle(uint baseAddress, params uint[] offsets) => ReadMemory<float>(baseAddress, offsets);
 
     /// <summary>
     /// 写入1字节数据
